@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" id="meta-theme-color" content="#1e6b38">
+  <link rel="manifest" href="manifest.json">
+  <title>Mes dépenses</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    :root {
+      --bg: #eef2f0;
+      --surface: #ffffff;
+      --surface-alt: #f6f8f7;
+      --surface-muted: #e6ece8;
+      --text: #18201b;
+      --text-muted: #5c6b62;
+      --border: #d5ded8;
+      --border-light: #edf1ee;
+      --accent: #1e6b38;
+      --accent-soft: #2e8b4d;
+      --accent-badge-bg: #e3f3e8;
+      --accent-badge-text: #16542b;
+      --accent-text: #ffffff;
+      --primary-action: #1565c0;
+      --danger: #c62828;
+      --danger-bg: #fdecec;
+      --shadow: 0 4px 16px rgba(16, 32, 22, 0.06);
+      --shadow-float: 0 12px 32px rgba(16, 32, 22, 0.22);
+    }
+
+    body.dark {
+      --bg: #0f1411;
+      --surface: #18201b;
+      --surface-alt: #131915;
+      --surface-muted: #232e27;
+      --text: #edf3ef;
+      --text-muted: #9aa9a0;
+      --border: #2c3830;
+      --border-light: #222b25;
+      --accent: #389e5a;
+      --accent-soft: #4eb870;
+      --accent-badge-bg: #1c3324;
+      --accent-badge-text: #7be09c;
+      --accent-text: #0b140e;
+      --primary-action: #42a5f5;
+      --danger: #ef5350;
+      --danger-bg: #361c1c;
+      --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      --shadow-float: 0 14px 36px rgba(0, 0, 0, 0.6);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px 16px 48px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      transition: background 0.22s ease, color 0.22s ease;
+    }
+
+    .app-conteneur {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      color: var(--accent);
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      flex: 1;
+      text-align: center;
+    }
+
+    .topbar-spacer {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    button.menu-btn {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 20px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+
+    /* ----- Menu tiroir (3 traits) ----- */
+    .menu-voile {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.48);
+      backdrop-filter: blur(2px);
+      z-index: 900;
+    }
+    .menu-voile.ouvert {
+      display: block;
+    }
+
+    .menu-tiroir {
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: 300px;
+      max-width: 88vw;
+      height: 100%;
+      background: var(--surface);
+      color: var(--text);
+      z-index: 950;
+      padding: 20px;
+      box-shadow: var(--shadow-float);
+      transition: right 0.22s ease;
+      overflow-y: auto;
+    }
+    .menu-tiroir.ouvert {
+      right: 0;
+    }
+
+    .menu-entete {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    .menu-entete h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    button.menu-fermer {
+      background: var(--surface-muted);
+      color: var(--text);
+      border: none;
+      border-radius: 9px;
+      width: 34px;
+      height: 34px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+
+    .menu-section-titre {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin: 16px 0 8px;
+    }
+
+    .theme-ligne {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 12px;
+      border-radius: 12px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+    }
+    .theme-ligne span {
+      font-weight: 700;
+      font-size: 15px;
+    }
+    button.btn-theme {
+      background: var(--accent);
+      color: var(--accent-text);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .couleur-boite {
+      padding: 11px 12px;
+      border-radius: 12px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      margin-top: 10px;
+    }
+    .couleur-haut {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .couleur-haut input[type="color"] {
+      width: 44px;
+      height: 34px;
+      padding: 2px;
+      margin-top: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .pastilles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    button.pastille {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--surface);
+      box-shadow: 0 0 0 1px var(--border);
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .menu-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    button.menu-action-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 14.5px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.menu-action-accent {
+      background: var(--accent);
+      color: var(--accent-text);
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    .sauvegarde-statut {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 12px;
+      line-height: 1.45;
+    }
+
+    /* ----- Cartes & typographie ----- */
+    h2 {
+      margin: 0 0 12px;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .carte {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .carte-entete-lien {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    button.titre-lien {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-align: left;
+    }
+    .lien-chevron {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .mois-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .mois-nav button {
+      background: var(--surface-muted);
+      color: var(--text);
+      border: 1px solid var(--border);
+      width: 44px;
+      height: 44px;
+      font-size: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .mois-titre {
+      font-size: 19px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .total {
+      font-size: 32px;
+      font-weight: 800;
+      text-align: center;
+      color: var(--accent);
+      margin-top: 10px;
+      letter-spacing: -0.02em;
+    }
+    .mois-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-light);
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .form-entete {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .form-entete h2 {
+      margin: 0;
+    }
+    button.scan-carre {
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--text);
+      font-size: 21px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      margin-top: 5px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: var(--surface-alt);
+      color: var(--text);
+    }
+    input:focus, select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    button.principal {
+      width: 100%;
+      background: var(--accent);
+      color: var(--accent-text);
+      border: none;
+      padding: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      border-radius: 12px;
+      margin-top: 18px;
+      cursor: pointer;
+    }
+    button.secondaire {
+      width: 100%;
+      background: var(--surface-muted);
+      color: var(--text);
+      border: none;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 12px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    button.supprimer-form {
+      width: 100%;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid transparent;
+      padding: 11px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 12px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .scan-retour {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+    }
+    .scan-retour.visible {
+      display: block;
+    }
+    .scan-statut {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .apercu-ticket {
+      max-width: 100%;
+      max-height: 160px;
+      border-radius: 9px;
+      margin-top: 8px;
+      display: none;
+    }
+    details.ocr-brut {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    details.ocr-brut pre {
+      white-space: pre-wrap;
+      background: var(--surface-muted);
+      color: var(--text);
+      padding: 10px;
+      border-radius: 8px;
+      max-height: 130px;
+      overflow-y: auto;
+    }
+
+    .cat-ligne { margin-bottom: 14px; }
+    .cat-ligne:last-child { margin-bottom: 0; }
+    .cat-haut {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14.5px;
+      gap: 8px;
+    }
+    .cat-nom {
+      font-weight: 600;
+    }
+    .barre-fond {
+      background: var(--surface-muted);
+      border-radius: 999px;
+      height: 9px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .barre {
+      background: var(--accent-soft);
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .depense {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .depense:last-child { border-bottom: none; padding-bottom: 0; }
+    .depense:first-child { padding-top: 0; }
+    .info-titre {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .badge-cat {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-badge-bg);
+      color: var(--accent-badge-text);
+    }
+    .info small {
+      display: block;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      margin-top: 3px;
+    }
+    .montant {
+      font-weight: 800;
+      font-size: 15.5px;
+      white-space: nowrap;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .actions button {
+      background: var(--surface-muted);
+      border: none;
+      border-radius: 9px;
+      font-size: 17px;
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+    .btn-modif { color: var(--primary-action); }
+    .btn-suppr { color: var(--danger); }
+    .vide {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 14px 0;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    /* ----- Vues détaillées plein écran ----- */
+    .vue-detail {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      color: var(--text);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 16px 16px 48px;
+    }
+    .vue-detail.ouverte {
+      display: block;
+    }
+    .vue-detail-entete {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .vue-detail-entete h2 {
+      margin: 0;
+      font-size: 19px;
+      text-transform: capitalize;
+    }
+    button.btn-retour {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+
+    .groupe-cat-bloc {
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .groupe-cat-bloc:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .groupe-cat-tete {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 15.5px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .filtres-grille {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .filtres-grille label {
+      margin-top: 0;
+      font-size: 12.5px;
+    }
+    .filtres-grille input,
+    .filtres-grille select {
+      padding: 10px 12px;
+      font-size: 14.5px;
+    }
+    .filtre-resume {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-light);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* ----- Pop-up rappel sauvegarde (7 jours) ----- */
+    .rappel-voile {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(2px);
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .rappel-voile.ouvert {
+      display: flex;
+    }
+    .rappel-carte {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow-float);
+      border: 1px solid var(--border);
+    }
+    .rappel-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-badge-bg);
+      color: var(--accent-badge-text);
+      margin-bottom: 10px;
+    }
+    .rappel-carte h2 {
+      margin: 0 0 8px;
+      font-size: 19px;
+    }
+    .rappel-carte p {
+      margin: 0 0 16px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .rappel-boutons {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .rappel-rangee {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+    button.rappel-primaire {
+      background: var(--accent);
+      color: var(--accent-text);
+      border: none;
+      border-radius: 11px;
+      padding: 12px;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.rappel-secondaire {
+      background: var(--primary-action);
+      color: #ffffff;
+      border: none;
+      border-radius: 11px;
+      padding: 12px;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.rappel-ignorer {
+      background: var(--surface-muted);
+      color: var(--text);
+      border: none;
+      border-radius: 11px;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ----- Toast discret ----- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text);
+      color: var(--surface);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 1200;
+      white-space: nowrap;
+      max-width: 92vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: var(--shadow-float);
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-conteneur">
+    <div class="topbar">
+      <div class="topbar-spacer" aria-hidden="true"></div>
+      <h1>Mes dépenses</h1>
+      <button type="button" class="menu-btn" id="btn-ouvrir-menu" aria-label="Ouvrir le menu">☰</button>
+    </div>
+
+    <!-- Navigation par mois et total -->
+    <div class="carte">
+      <div class="mois-nav">
+        <button type="button" id="mois-prec" aria-label="Mois précédent">◀</button>
+        <div class="mois-titre" id="mois-titre"></div>
+        <button type="button" id="mois-suiv" aria-label="Mois suivant">▶</button>
+      </div>
+      <div class="total nums" id="total">0.00 CHF</div>
+      <div class="mois-meta nums">
+        <span id="meta-compteur">0 dépense • moy. 0.00 CHF</span>
+        <span id="meta-sauvegarde">Export : jamais</span>
+      </div>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="carte">
+      <div class="form-entete">
+        <h2 id="titre-form">Nouvelle dépense</h2>
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
+        <button type="button" class="scan-carre" id="btn-scan" title="Scanner une quittance" aria-label="Scanner une quittance">📷</button>
+      </div>
+
+      <div class="scan-retour" id="scan-retour">
+        <div class="scan-statut" id="scan-statut"></div>
+        <img id="apercu-ticket" class="apercu-ticket" alt="Aperçu de la quittance">
+        <details class="ocr-brut" id="ocr-details" style="display:none;">
+          <summary>Voir le texte brut détecté</summary>
+          <pre id="ocr-texte"></pre>
+        </details>
+      </div>
+
+      <label for="montant">Montant (CHF)</label>
+      <input type="number" id="montant" class="nums" step="0.05" min="0" inputmode="decimal" placeholder="ex. 23.90">
+
+      <label for="date">Date</label>
+      <input type="date" id="date" class="nums">
+
+      <label for="categorie">Catégorie</label>
+      <select id="categorie">
+        <option>Alimentation</option>
+        <option>Restaurant</option>
+        <option>Transport</option>
+        <option>Logement</option>
+        <option>Santé</option>
+        <option>Loisirs</option>
+        <option>Vêtements</option>
+        <option>Autre</option>
+      </select>
+
+      <label for="note">Note (magasin / détail obligatoire)</label>
+      <input type="text" id="note" required placeholder="ex. Migros">
+
+      <button type="button" class="principal" id="ajouter">Ajouter la dépense</button>
+      <button type="button" class="secondaire" id="annuler" style="display:none;">Annuler la modification</button>
+      <button type="button" class="supprimer-form" id="supprimer-en-cours" style="display:none;">🗑 Supprimer cette dépense</button>
+    </div>
+
+    <!-- Catégorie (cliquable -> page détail par catégorie) -->
+    <div class="carte">
+      <div class="carte-entete-lien">
+        <button type="button" class="titre-lien" id="btn-ouvrir-detail-categories">
+          <span>Catégorie</span>
+          <span class="lien-chevron">Détail ›</span>
+        </button>
+      </div>
+      <div id="categories"></div>
+    </div>
+
+    <!-- Historique du mois (5 max -> cliquable pour détail du mois) -->
+    <div class="carte">
+      <div class="carte-entete-lien">
+        <button type="button" class="titre-lien" id="btn-ouvrir-detail-mois">
+          <span>Historique du mois</span>
+          <span class="lien-chevron" id="badge-total-mois">Tout voir ›</span>
+        </button>
+      </div>
+      <div id="liste"></div>
+    </div>
+  </div>
+
+  <!-- Voile et tiroir latéral (3 traits) -->
+  <div class="menu-voile" id="menu-voile"></div>
+  <aside class="menu-tiroir" id="menu-tiroir" aria-label="Menu des options">
+    <div class="menu-entete">
+      <h2>Options</h2>
+      <button type="button" class="menu-fermer" id="btn-fermer-menu" aria-label="Fermer le menu">✕</button>
+    </div>
+
+    <div class="menu-section-titre">Historique</div>
+    <div class="menu-actions">
+      <button type="button" class="menu-action-btn menu-action-accent" id="btn-menu-historique-complet">
+        🔎 Historique complet (mois / années / tout)
+      </button>
+    </div>
+
+    <div class="menu-section-titre">Apparence</div>
+    <div class="theme-ligne">
+      <span>Mode sombre</span>
+      <button type="button" class="btn-theme" id="btn-toggle-theme">Désactivé</button>
+    </div>
+
+    <div class="couleur-boite">
+      <div class="couleur-haut">
+        <label for="selecteur-couleur" style="margin:0; font-size:14px;">Couleur principale</label>
+        <input type="color" id="selecteur-couleur" value="#1e6b38" aria-label="Choisir une couleur principale">
+      </div>
+      <div class="pastilles" id="pastilles-couleur">
+        <button type="button" class="pastille" data-couleur="#1e6b38" style="background:#1e6b38;" title="Vert forêt" aria-label="Vert forêt"></button>
+        <button type="button" class="pastille" data-couleur="#1565c0" style="background:#1565c0;" title="Bleu" aria-label="Bleu"></button>
+        <button type="button" class="pastille" data-couleur="#6a1b9a" style="background:#6a1b9a;" title="Violet" aria-label="Violet"></button>
+        <button type="button" class="pastille" data-couleur="#c62828" style="background:#c62828;" title="Rouge" aria-label="Rouge"></button>
+        <button type="button" class="pastille" data-couleur="#ef6c00" style="background:#ef6c00;" title="Orange" aria-label="Orange"></button>
+        <button type="button" class="pastille" data-couleur="#00796b" style="background:#00796b;" title="Sarcelle" aria-label="Sarcelle"></button>
+      </div>
+    </div>
+
+    <div class="menu-section-titre">Sauvegarde &amp; Export</div>
+    <div class="menu-actions">
+      <button type="button" class="menu-action-btn" id="btn-export-json">⬇ Exporter JSON</button>
+      <button type="button" class="menu-action-btn" id="btn-export-csv">⬇ Exporter CSV</button>
+      <button type="button" class="menu-action-btn" id="btn-import">⬆ Importer un fichier JSON ou CSV</button>
+      <input type="file" id="import-input" accept=".json,.csv,application/json,text/csv" style="display:none;">
+    </div>
+
+    <div class="sauvegarde-statut" id="sauvegarde-statut">
+      Sauvegarde automatique active dans le navigateur.
+    </div>
+  </aside>
+
+  <!-- Vue plein écran : Détail complet par catégorie (mois affiché) -->
+  <div class="vue-detail" id="vue-detail-categories" role="dialog" aria-modal="true" aria-labelledby="titre-detail-cat">
+    <div class="app-conteneur">
+      <div class="vue-detail-entete">
+        <h2 id="titre-detail-cat">Catégories — Détail</h2>
+        <button type="button" class="btn-retour" id="btn-fermer-detail-cat">← Retour</button>
+      </div>
+      <div class="carte" id="contenu-detail-categories"></div>
+    </div>
+  </div>
+
+  <!-- Vue plein écran : Détail complet de l'historique du mois -->
+  <div class="vue-detail" id="vue-detail-mois" role="dialog" aria-modal="true" aria-labelledby="titre-detail-mois">
+    <div class="app-conteneur">
+      <div class="vue-detail-entete">
+        <h2 id="titre-detail-mois">Historique du mois</h2>
+        <button type="button" class="btn-retour" id="btn-fermer-detail-mois">← Retour</button>
+      </div>
+      <div class="carte">
+        <div class="filtre-resume nums" style="margin-top:0; padding-top:0; border-top:none; margin-bottom:10px;">
+          <span id="detail-mois-compteur">0 dépense</span>
+          <span id="detail-mois-total">0.00 CHF</span>
+        </div>
+        <div id="contenu-detail-mois"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue plein écran : Historique complet filtrable (Mois / Années / Tout) -->
+  <div class="vue-detail" id="vue-historique-complet" role="dialog" aria-modal="true" aria-labelledby="titre-histo-complet">
+    <div class="app-conteneur">
+      <div class="vue-detail-entete">
+        <h2 id="titre-histo-complet">Historique complet</h2>
+        <button type="button" class="btn-retour" id="btn-fermer-histo-complet">← Retour</button>
+      </div>
+
+      <div class="carte">
+        <div class="filtres-grille">
+          <div>
+            <label for="filtre-portee">Affichage</label>
+            <select id="filtre-portee">
+              <option value="tout">Tout l'historique</option>
+              <option value="annee">Par année</option>
+              <option value="mois">Par mois</option>
+            </select>
+          </div>
+          <div id="bloc-filtre-annee" style="display:none;">
+            <label for="filtre-annee">Année</label>
+            <select id="filtre-annee"></select>
+          </div>
+          <div id="bloc-filtre-mois" style="display:none;">
+            <label for="filtre-mois">Mois</label>
+            <select id="filtre-mois"></select>
+          </div>
+          <div>
+            <label for="filtre-cat-complet">Catégorie</label>
+            <select id="filtre-cat-complet">
+              <option value="">Toutes</option>
+              <option>Alimentation</option>
+              <option>Restaurant</option>
+              <option>Transport</option>
+              <option>Logement</option>
+              <option>Santé</option>
+              <option>Loisirs</option>
+              <option>Vêtements</option>
+              <option>Autre</option>
+            </select>
+          </div>
+          <div>
+            <label for="filtre-note-complet">Note / Magasin</label>
+            <input type="text" id="filtre-note-complet" placeholder="ex. Migros">
+          </div>
+          <div>
+            <label for="filtre-min-complet">Montant min. (CHF)</label>
+            <input type="number" id="filtre-min-complet" class="nums" step="0.05" min="0" inputmode="decimal" placeholder="ex. 10">
+          </div>
+        </div>
+
+        <button type="button" class="secondaire" id="btn-reset-histo-complet">Réinitialiser les filtres</button>
+
+        <div class="filtre-resume nums">
+          <span id="histo-complet-nb">0 dépense</span>
+          <span id="histo-complet-total">0.00 CHF</span>
+        </div>
+      </div>
+
+      <div class="carte" id="contenu-histo-complet"></div>
+    </div>
+  </div>
+
+  <!-- Pop-up rappel sauvegarde après 7 jours -->
+  <div class="rappel-voile" id="rappel-voile" role="dialog" aria-modal="true" aria-labelledby="rappel-titre">
+    <div class="rappel-carte">
+      <span class="rappel-badge">Rappel • 7 jours</span>
+      <h2 id="rappel-titre">Pense à sauvegarder tes dépenses</h2>
+      <p id="rappel-texte">Tu as des dépenses enregistrées dans le navigateur. Télécharge un fichier de sauvegarde pour les mettre en sécurité.</p>
+      <div class="rappel-boutons">
+        <div class="rappel-rangee">
+          <button type="button" class="rappel-primaire" id="rappel-export-json">⬇ Exporter JSON</button>
+          <button type="button" class="rappel-secondaire" id="rappel-export-csv">⬇ Exporter CSV</button>
+        </div>
+        <button type="button" class="rappel-ignorer" id="rappel-plus-tard">Plus tard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast discret -->
+  <div class="toast nums" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ---------- Enregistrement Service Worker (PWA) ----------
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function () {});
+      });
+    }
+
+    // ---------- Toast ----------
+    const toastEl = document.getElementById('toast');
+    let toastTimer = null;
+
+    function afficherToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toastEl.classList.remove('visible');
+      }, 2400);
+    }
+
+    // ---------- Couleur principale & Thème sombre ----------
+    const CLE_COULEUR = 'couleurAccent';
+    const CLE_THEME = 'modeSombre';
+    const btnToggleTheme = document.getElementById('btn-toggle-theme');
+    const metaThemeColor = document.getElementById('meta-theme-color');
+    const selecteurCouleur = document.getElementById('selecteur-couleur');
+
+    function hexVersRgb(hex) {
+      const propre = String(hex || '#1e6b38').replace('#', '');
+      if (propre.length !== 6) return { r: 30, g: 107, b: 56 };
+      return {
+        r: parseInt(propre.slice(0, 2), 16) || 30,
+        g: parseInt(propre.slice(2, 4), 16) || 107,
+        b: parseInt(propre.slice(4, 6), 16) || 56
+      };
+    }
+
+    function melangerCouleur(hex, cibleHex, ratio) {
+      const a = hexVersRgb(hex);
+      const b = hexVersRgb(cibleHex);
+      const r = Math.round(a.r + (b.r - a.r) * ratio);
+      const g = Math.round(a.g + (b.g - a.g) * ratio);
+      const bl = Math.round(a.b + (b.b - a.b) * ratio);
+      return '#' + [r, g, bl].map(function (v) {
+        return Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0');
+      }).join('');
+    }
+
+    function luminanceRelative(hex) {
+      const { r, g, b } = hexVersRgb(hex);
+      const conv = function (c) {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * conv(r) + 0.7152 * conv(g) + 0.0722 * conv(b);
+    }
+
+    function appliquerCouleurAccent(hex) {
+      const valide = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex.toLowerCase() : '#1e6b38';
+      const estSombre = document.body.classList.contains('dark');
+      const racine = document.documentElement;
+
+      const accent = estSombre ? melangerCouleur(valide, '#ffffff', 0.22) : valide;
+      const accentSoft = estSombre ? melangerCouleur(valide, '#ffffff', 0.35) : melangerCouleur(valide, '#ffffff', 0.14);
+      const badgeBg = estSombre ? melangerCouleur(valide, '#0f1411', 0.76) : melangerCouleur(valide, '#ffffff', 0.88);
+      const badgeText = estSombre ? melangerCouleur(valide, '#ffffff', 0.55) : melangerCouleur(valide, '#000000', 0.25);
+      const texteBouton = luminanceRelative(accent) > 0.36 ? '#111813' : '#ffffff';
+
+      racine.style.setProperty('--accent', accent);
+      racine.style.setProperty('--accent-soft', accentSoft);
+      racine.style.setProperty('--accent-badge-bg', badgeBg);
+      racine.style.setProperty('--accent-badge-text', badgeText);
+      racine.style.setProperty('--accent-text', texteBouton);
+
+      selecteurCouleur.value = valide;
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', estSombre ? '#0f1411' : accent);
+      }
+      localStorage.setItem(CLE_COULEUR, valide);
+    }
+
+    function appliquerTheme(sombre) {
+      document.body.classList.toggle('dark', Boolean(sombre));
+      btnToggleTheme.textContent = sombre ? 'Activé' : 'Désactivé';
+      localStorage.setItem(CLE_THEME, sombre ? '1' : '0');
+      appliquerCouleurAccent(localStorage.getItem(CLE_COULEUR) || selecteurCouleur.value || '#1e6b38');
+    }
+
+    btnToggleTheme.addEventListener('click', function () {
+      const estSombre = document.body.classList.contains('dark');
+      appliquerTheme(!estSombre);
+      afficherToast(!estSombre ? 'Mode sombre activé' : 'Mode clair activé');
+    });
+
+    selecteurCouleur.addEventListener('input', function () {
+      appliquerCouleurAccent(selecteurCouleur.value);
+    });
+
+    document.querySelectorAll('#pastilles-couleur .pastille').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const c = btn.getAttribute('data-couleur');
+        appliquerCouleurAccent(c);
+        afficherToast('Couleur mise à jour');
+      });
+    });
+
+    // ---------- Menu tiroir (3 traits) ----------
+    const menuVoile = document.getElementById('menu-voile');
+    const menuTiroir = document.getElementById('menu-tiroir');
+
+    function ouvrirMenu() {
+      menuVoile.classList.add('ouvert');
+      menuTiroir.classList.add('ouvert');
+    }
+
+    function fermerMenu() {
+      menuVoile.classList.remove('ouvert');
+      menuTiroir.classList.remove('ouvert');
+    }
+
+    document.getElementById('btn-ouvrir-menu').addEventListener('click', ouvrirMenu);
+    document.getElementById('btn-fermer-menu').addEventListener('click', fermerMenu);
+    menuVoile.addEventListener('click', fermerMenu);
+
+    // ---------- Données & Sauvegarde ----------
+    const CLE_DEPENSES = 'depenses';
+    const CLE_DERNIERE_SAUVEGARDE = 'derniereSauvegardeFichier';
+    const SEPT_JOURS_MS = 7 * 24 * 60 * 60 * 1000;
+
+    let depenses = JSON.parse(localStorage.getItem(CLE_DEPENSES) || '[]');
+    let moisAffiche = new Date().toLocaleDateString('en-CA').slice(0, 7);
+    let idEnModification = null;
+
+    function formaterDateCourte(timestamp) {
+      if (!timestamp) return 'jamais';
+      const d = new Date(Number(timestamp));
+      if (isNaN(d.getTime())) return 'jamais';
+      return d.toLocaleDateString('fr-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function mettreAJourAffichageSauvegarde() {
+      const derniere = localStorage.getItem(CLE_DERNIERE_SAUVEGARDE);
+      const texteDerniere = formaterDateCourte(derniere);
+      const metaSauvegarde = document.getElementById('meta-sauvegarde');
+      if (metaSauvegarde) {
+        metaSauvegarde.textContent = 'Export : ' + texteDerniere;
+      }
+      const statut = document.getElementById('sauvegarde-statut');
+      if (statut) {
+        const heure = new Date().toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
+        statut.textContent =
+          'Local actif (' + depenses.length + ' dépense(s), maj ' + heure + '). ' +
+          'Dernier export : ' + texteDerniere + '.';
+      }
+    }
+
+    function sauvegarder() {
+      localStorage.setItem(CLE_DEPENSES, JSON.stringify(depenses));
+      mettreAJourAffichageSauvegarde();
+    }
+
+    function marquerExportEffectue() {
+      localStorage.setItem(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
+      mettreAJourAffichageSauvegarde();
+    }
+
+    function genererId() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      return String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+    }
+
+    // ---------- Pop-up rappel 7 jours ----------
+    const rappelVoile = document.getElementById('rappel-voile');
+    const rappelTexte = document.getElementById('rappel-texte');
+
+    function fermerRappelSauvegarde() {
+      rappelVoile.classList.remove('ouvert');
+    }
+
+    function verifierRappelSauvegarde7Jours() {
+      if (!Array.isArray(depenses) || depenses.length === 0) return;
+
+      const derniereStr = localStorage.getItem(CLE_DERNIERE_SAUVEGARDE);
+      const derniereTs = derniereStr ? Number(derniereStr) : 0;
+      const maintenant = Date.now();
+
+      if (!derniereTs || (maintenant - derniereTs) >= SEPT_JOURS_MS) {
+        if (!derniereTs) {
+          rappelTexte.textContent =
+            'Tu as ' + depenses.length + ' dépense(s) enregistrée(s) et aucune sauvegarde fichier effectuée. Exportez-les maintenant pour les conserver en sécurité.';
+        } else {
+          const jours = Math.floor((maintenant - derniereTs) / (24 * 60 * 60 * 1000));
+          rappelTexte.textContent =
+            'Cela fait ' + jours + ' jour(s) sans export de sauvegarde (' + depenses.length + ' dépense(s) au total). Lance un export maintenant ?';
+        }
+        rappelVoile.classList.add('ouvert');
+      }
+    }
+
+    document.getElementById('rappel-plus-tard').addEventListener('click', fermerRappelSauvegarde);
+
+    // ---------- Outils ----------
+    function aujourdhui() {
+      return new Date().toLocaleDateString('en-CA');
+    }
+
+    function formaterCHF(nombre) {
+      return nombre.toLocaleString('de-CH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + ' CHF';
+    }
+
+    function echapper(texte) {
+      const div = document.createElement('div');
+      div.textContent = texte;
+      return div.innerHTML;
+    }
+
+    function nomDuMois(moisTexte) {
+      const parties = moisTexte.split('-');
+      const date = new Date(parseInt(parties[0], 10), parseInt(parties[1], 10) - 1, 1);
+      return date.toLocaleDateString('fr-CH', { month: 'long', year: 'numeric' });
+    }
+
+    function changerMois(decalage) {
+      const parties = moisAffiche.split('-');
+      const date = new Date(parseInt(parties[0], 10), parseInt(parties[1], 10) - 1 + decalage, 1);
+      const annee = date.getFullYear();
+      const mois = String(date.getMonth() + 1).padStart(2, '0');
+      moisAffiche = annee + '-' + mois;
+      afficher();
+    }
+
+    // ---------- Export & Import JSON / CSV ----------
+    const sauvegardeStatut = document.getElementById('sauvegarde-statut');
+    const importInput = document.getElementById('import-input');
+
+    function telechargerFichier(contenu, nomFichier, typeMime) {
+      const blob = new Blob([contenu], { type: typeMime });
+      const url = URL.createObjectURL(blob);
+      const lien = document.createElement('a');
+      lien.href = url;
+      lien.download = nomFichier;
+      document.body.appendChild(lien);
+      lien.click();
+      document.body.removeChild(lien);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    function echapperCSV(valeur) {
+      const str = String(valeur == null ? '' : valeur);
+      if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    function lancerExportJSON() {
+      const donneesExport = {
+        application: 'Mes dépenses',
+        devise: 'CHF',
+        exporteLe: new Date().toISOString(),
+        depenses: depenses
+      };
+      const nomFichier = 'depenses-' + aujourdhui() + '.json';
+      telechargerFichier(JSON.stringify(donneesExport, null, 2), nomFichier, 'application/json;charset=utf-8');
+      marquerExportEffectue();
+      fermerRappelSauvegarde();
+      sauvegardeStatut.textContent = 'Export JSON téléchargé (' + depenses.length + ' dépense(s)).';
+      afficherToast('Sauvegarde JSON exportée');
+    }
+
+    function lancerExportCSV() {
+      const lignes = ['id;date;categorie;note;montant_chf;devise'];
+      depenses.forEach(function (d) {
+        lignes.push([
+          echapperCSV(d.id),
+          echapperCSV(d.date),
+          echapperCSV(d.categorie),
+          echapperCSV(d.note),
+          echapperCSV(Number(d.montant).toFixed(2)),
+          'CHF'
+        ].join(';'));
+      });
+      const csvAvecBom = '\uFEFF' + lignes.join('\n');
+      const nomFichier = 'depenses-' + aujourdhui() + '.csv';
+      telechargerFichier(csvAvecBom, nomFichier, 'text/csv;charset=utf-8');
+      marquerExportEffectue();
+      fermerRappelSauvegarde();
+      sauvegardeStatut.textContent = 'Export CSV téléchargé (' + depenses.length + ' dépense(s)).';
+      afficherToast('Sauvegarde CSV exportée');
+    }
+
+    document.getElementById('btn-export-json').addEventListener('click', lancerExportJSON);
+    document.getElementById('btn-export-csv').addEventListener('click', lancerExportCSV);
+    document.getElementById('rappel-export-json').addEventListener('click', lancerExportJSON);
+    document.getElementById('rappel-export-csv').addEventListener('click', lancerExportCSV);
+
+    function parserLigneCSV(ligne, separateur) {
+      const champs = [];
+      let courant = '';
+      let entreGuillemets = false;
+      for (let i = 0; i < ligne.length; i++) {
+        const ch = ligne[i];
+        if (entreGuillemets) {
+          if (ch === '"' && ligne[i + 1] === '"') {
+            courant += '"';
+            i++;
+          } else if (ch === '"') {
+            entreGuillemets = false;
+          } else {
+            courant += ch;
+          }
+        } else if (ch === '"') {
+          entreGuillemets = true;
+        } else if (ch === separateur) {
+          champs.push(courant);
+          courant = '';
+        } else {
+          courant += ch;
+        }
+      }
+      champs.push(courant);
+      return champs;
+    }
+
+    function normaliserDepenseImportee(item) {
+      if (!item || typeof item !== 'object') return null;
+      const montant = parseFloat(String(item.montant != null ? item.montant : item.montant_chf).replace(',', '.'));
+      const date = String(item.date || '').trim();
+      const categorie = String(item.categorie || 'Autre').trim() || 'Autre';
+      const note = String(item.note || '').trim();
+      if (isNaN(montant) || montant <= 0) return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+      if (!note) return null;
+      return {
+        id: item.id ? String(item.id) : genererId(),
+        montant: montant,
+        date: date,
+        categorie: categorie,
+        note: note
+      };
+    }
+
+    function parserImportCSV(texte) {
+      const propre = texte.replace(/^\uFEFF/, '').trim();
+      if (!propre) return [];
+      const lignes = propre.split(/\r?\n/).filter(function (l) { return l.trim() !== ''; });
+      if (lignes.length === 0) return [];
+
+      const sep = lignes[0].includes(';') ? ';' : ',';
+      const premiere = parserLigneCSV(lignes[0], sep).map(function (c) { return c.trim().toLowerCase(); });
+      const aEntete = premiere.includes('montant') || premiere.includes('montant_chf') || premiere.includes('date');
+      const debutIndex = aEntete ? 1 : 0;
+
+      const idxId = aEntete ? premiere.indexOf('id') : -1;
+      const idxDate = aEntete ? premiere.indexOf('date') : 0;
+      const idxCat = aEntete ? premiere.indexOf('categorie') : 1;
+      const idxNote = aEntete ? premiere.indexOf('note') : 2;
+      const idxMontant = aEntete
+        ? (premiere.indexOf('montant_chf') !== -1 ? premiere.indexOf('montant_chf') : premiere.indexOf('montant'))
+        : 3;
+
+      const resultat = [];
+      for (let i = debutIndex; i < lignes.length; i++) {
+        const cols = parserLigneCSV(lignes[i], sep);
+        const obj = {
+          id: idxId >= 0 ? cols[idxId] : undefined,
+          date: cols[idxDate],
+          categorie: cols[idxCat],
+          note: cols[idxNote],
+          montant: cols[idxMontant]
+        };
+        const valide = normaliserDepenseImportee(obj);
+        if (valide) resultat.push(valide);
+      }
+      return resultat;
+    }
+
+    document.getElementById('btn-import').addEventListener('click', function () {
+      importInput.value = '';
+      importInput.click();
+    });
+
+    importInput.addEventListener('change', async function () {
+      const fichier = importInput.files && importInput.files[0];
+      if (!fichier) return;
+
+      try {
+        const contenu = await fichier.text();
+        let candidates = [];
+
+        if (fichier.name.toLowerCase().endsWith('.json') || contenu.trim().startsWith('{') || contenu.trim().startsWith('[')) {
+          const parsed = JSON.parse(contenu);
+          const listeBrute = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.depenses) ? parsed.depenses : []);
+          candidates = listeBrute.map(normaliserDepenseImportee).filter(Boolean);
+        } else {
+          candidates = parserImportCSV(contenu);
+        }
+
+        if (candidates.length === 0) {
+          sauvegardeStatut.textContent = 'Aucune dépense valide trouvée dans le fichier.';
+          afficherToast('Aucune ligne valide trouvée');
+          return;
+        }
+
+        const idsExistants = new Set(depenses.map(function (d) { return String(d.id); }));
+        let ajoutes = 0;
+        candidates.forEach(function (item) {
+          if (idsExistants.has(String(item.id))) {
+            item.id = genererId();
+          }
+          idsExistants.add(String(item.id));
+          depenses.push(item);
+          ajoutes++;
+        });
+
+        sauvegarder();
+        moisAffiche = candidates[candidates.length - 1].date.slice(0, 7);
+        afficher();
+        sauvegardeStatut.textContent = ajoutes + ' dépense(s) importée(s) depuis ' + fichier.name + '.';
+        afficherToast(ajoutes + ' dépense(s) importée(s)');
+      } catch (err) {
+        sauvegardeStatut.textContent = 'Erreur de lecture du fichier : vérifie le format JSON ou CSV.';
+        afficherToast('Erreur lors de l’import');
+      }
+    });
+
+    // ---------- Scan OCR de quittance (bouton carré) ----------
+    function extraireMontantDepuisTexte(texte) {
+      const candidats = [];
+      const regex = /(?:chf|fr\.?|total|montant|summe|betrag)?\s*[:=]?\s*(\d{1,3}(?:['’\s]\d{3})*[.,]\d{2})/gi;
+      let match;
+      while ((match = regex.exec(texte)) !== null) {
+        const brut = match[1].replace(/['’\s]/g, '').replace(',', '.');
+        const val = parseFloat(brut);
+        if (!isNaN(val) && val > 0 && val < 100000) {
+          candidats.push({ valeur: val, contexte: match[0].toLowerCase() });
+        }
+      }
+      if (candidats.length === 0) return null;
+
+      const prioritaire = candidats.find(function (c) {
+        return c.contexte.includes('total') || c.contexte.includes('chf') || c.contexte.includes('fr');
+      });
+      if (prioritaire) return prioritaire.valeur;
+
+      candidats.sort(function (a, b) { return b.valeur - a.valeur; });
+      return candidats[0].valeur;
+    }
+
+    function detecterMagasin(texte) {
+      const minTexte = texte.toLowerCase();
+      const enseignes = [
+        { motif: 'migros', nom: 'Migros' },
+        { motif: 'coop', nom: 'Coop' },
+        { motif: 'aldi', nom: 'Aldi' },
+        { motif: 'lidl', nom: 'Lidl' },
+        { motif: 'denner', nom: 'Denner' },
+        { motif: 'manor', nom: 'Manor' },
+        { motif: 'ikea', nom: 'IKEA' },
+        { motif: 'mediamarkt', nom: 'MediaMarkt' },
+        { motif: 'fust', nom: 'Fust' },
+        { motif: 'interdiscount', nom: 'Interdiscount' },
+        { motif: 'galaxus', nom: 'Galaxus' },
+        { motif: 'digitec', nom: 'Digitec' },
+        { motif: 'cff', nom: 'CFF' },
+        { motif: 'sbb', nom: 'SBB' },
+        { motif: 'ffs', nom: 'FFS' }
+      ];
+
+      for (let i = 0; i < enseignes.length; i++) {
+        if (minTexte.includes(enseignes[i].motif)) {
+          return enseignes[i].nom;
+        }
+      }
+      return '';
+    }
+
+    const cameraInput = document.getElementById('camera-input');
+    const btnScan = document.getElementById('btn-scan');
+    const scanRetour = document.getElementById('scan-retour');
+    const scanStatut = document.getElementById('scan-statut');
+    const apercuTicket = document.getElementById('apercu-ticket');
+    const ocrDetails = document.getElementById('ocr-details');
+    const ocrTexte = document.getElementById('ocr-texte');
+
+    btnScan.addEventListener('click', function () {
+      cameraInput.value = '';
+      cameraInput.click();
+    });
+
+    cameraInput.addEventListener('change', async function () {
+      const fichier = cameraInput.files && cameraInput.files[0];
+      if (!fichier) return;
+
+      const urlApercu = URL.createObjectURL(fichier);
+      apercuTicket.src = urlApercu;
+      apercuTicket.style.display = 'block';
+      ocrDetails.style.display = 'none';
+      scanRetour.classList.add('visible');
+
+      if (typeof Tesseract === 'undefined') {
+        scanStatut.textContent = 'OCR indisponible hors ligne : saisis le montant et la note manuellement.';
+        return;
+      }
+
+      scanStatut.textContent = 'Analyse de la quittance en cours...';
+      btnScan.disabled = true;
+
+      try {
+        const resultat = await Tesseract.recognize(fichier, 'fra+deu', {
+          logger: function (m) {
+            if (m.status === 'recognizing text' && typeof m.progress === 'number') {
+              scanStatut.textContent = 'Lecture : ' + Math.round(m.progress * 100) + ' %';
+            }
+          }
+        });
+
+        const texte = (resultat && resultat.data && resultat.data.text) ? resultat.data.text.trim() : '';
+        ocrTexte.textContent = texte || '(Aucun texte reconnu)';
+        ocrDetails.style.display = 'block';
+
+        const montantDetecte = extraireMontantDepuisTexte(texte);
+        const noteInput = document.getElementById('note');
+        const magasinDetecte = detecterMagasin(texte);
+
+        if (montantDetecte !== null) {
+          document.getElementById('montant').value = montantDetecte.toFixed(2);
+        }
+        if (magasinDetecte) {
+          noteInput.value = magasinDetecte;
+        }
+
+        const resumeParties = [];
+        if (montantDetecte !== null) resumeParties.push('Montant : ' + formaterCHF(montantDetecte));
+        if (magasinDetecte) {
+          resumeParties.push('Magasin : ' + magasinDetecte);
+        } else {
+          resumeParties.push('Magasin non reconnu : note à saisir');
+        }
+        scanStatut.textContent = resumeParties.join(' — ');
+      } catch (err) {
+        scanStatut.textContent = 'Erreur OCR : saisis le montant et la note manuellement.';
+      } finally {
+        btnScan.disabled = false;
+      }
+    });
+
+    // ---------- Ligne de dépense réutilisable ----------
+    function creerLigneDepense(d) {
+      const ligne = document.createElement('div');
+      ligne.className = 'depense';
+      ligne.innerHTML =
+        '<div class="info">' +
+        '<div class="info-titre">' +
+        '<span class="badge-cat">' + echapper(d.categorie) + '</span>' +
+        '<span>' + echapper(d.note || '') + '</span>' +
+        '</div>' +
+        '<small class="nums">' + d.date + '</small>' +
+        '</div>' +
+        '<div class="actions">' +
+        '<span class="montant nums">' + formaterCHF(d.montant) + '</span>' +
+        '<button type="button" class="btn-modif" aria-label="Modifier" onclick="modifier(\'' + d.id + '\')">✎</button>' +
+        '<button type="button" class="btn-suppr" aria-label="Supprimer" onclick="supprimer(\'' + d.id + '\')">✕</button>' +
+        '</div>';
+      return ligne;
+    }
+
+    // ---------- Vues détaillées : Catégories / Mois / Historique complet ----------
+    const vueDetailCategories = document.getElementById('vue-detail-categories');
+    const vueDetailMois = document.getElementById('vue-detail-mois');
+    const vueHistoriqueComplet = document.getElementById('vue-historique-complet');
+
+    function fermerToutesVuesDetail() {
+      vueDetailCategories.classList.remove('ouverte');
+      vueDetailMois.classList.remove('ouverte');
+      vueHistoriqueComplet.classList.remove('ouverte');
+    }
+
+    function afficherDetailCategories() {
+      document.getElementById('titre-detail-cat').textContent = 'Catégories — ' + nomDuMois(moisAffiche);
+      const conteneur = document.getElementById('contenu-detail-categories');
+      conteneur.innerHTML = '';
+
+      const duMois = depenses.filter(function (d) {
+        return d.date.slice(0, 7) === moisAffiche;
+      });
+
+      if (duMois.length === 0) {
+        conteneur.innerHTML = '<p class="vide">Aucune dépense enregistrée ce mois-ci.</p>';
+        return;
+      }
+
+      const parCat = {};
+      duMois.forEach(function (d) {
+        if (!parCat[d.categorie]) parCat[d.categorie] = [];
+        parCat[d.categorie].push(d);
+      });
+
+      const catsTriees = Object.keys(parCat).sort(function (a, b) {
+        const totA = parCat[a].reduce(function (s, x) { return s + x.montant; }, 0);
+        const totB = parCat[b].reduce(function (s, x) { return s + x.montant; }, 0);
+        return totB - totA;
+      });
+
+      catsTriees.forEach(function (cat) {
+        const items = parCat[cat].slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
+        const sousTotal = items.reduce(function (s, x) { return s + x.montant; }, 0);
+
+        const bloc = document.createElement('div');
+        bloc.className = 'groupe-cat-bloc';
+
+        const tete = document.createElement('div');
+        tete.className = 'groupe-cat-tete nums';
+        tete.innerHTML = '<span>' + echapper(cat) + ' (' + items.length + ')</span><span>' + formaterCHF(sousTotal) + '</span>';
+        bloc.appendChild(tete);
+
+        items.forEach(function (item) {
+          bloc.appendChild(creerLigneDepense(item));
+        });
+
+        conteneur.appendChild(bloc);
+      });
+    }
+
+    function afficherDetailMois() {
+      document.getElementById('titre-detail-mois').textContent = 'Historique — ' + nomDuMois(moisAffiche);
+      const conteneur = document.getElementById('contenu-detail-mois');
+      conteneur.innerHTML = '';
+
+      const duMois = depenses
+        .filter(function (d) { return d.date.slice(0, 7) === moisAffiche; })
+        .slice()
+        .sort(function (a, b) { return b.date.localeCompare(a.date); });
+
+      const somme = duMois.reduce(function (t, d) { return t + d.montant; }, 0);
+      document.getElementById('detail-mois-compteur').textContent =
+        duMois.length + (duMois.length > 1 ? ' dépenses' : ' dépense');
+      document.getElementById('detail-mois-total').textContent = formaterCHF(somme);
+
+      if (duMois.length === 0) {
+        conteneur.innerHTML = '<p class="vide">Aucune dépense ce mois-ci.</p>';
+        return;
+      }
+
+      duMois.forEach(function (item) {
+        conteneur.appendChild(creerLigneDepense(item));
+      });
+    }
+
+    // ----- Historique complet filtrable (Tout / Année / Mois) -----
+    const filtrePortee = document.getElementById('filtre-portee');
+    const blocFiltreAnnee = document.getElementById('bloc-filtre-annee');
+    const blocFiltreMois = document.getElementById('bloc-filtre-mois');
+    const filtreAnnee = document.getElementById('filtre-annee');
+    const filtreMois = document.getElementById('filtre-mois');
+    const filtreCatComplet = document.getElementById('filtre-cat-complet');
+    const filtreNoteComplet = document.getElementById('filtre-note-complet');
+    const filtreMinComplet = document.getElementById('filtre-min-complet');
+
+    function peuplerSelecteursTemps() {
+      const annees = Array.from(new Set(depenses.map(function (d) { return d.date.slice(0, 4); })))
+        .filter(Boolean)
+        .sort()
+        .reverse();
+      const moisDisponibles = Array.from(new Set(depenses.map(function (d) { return d.date.slice(0, 7); })))
+        .filter(Boolean)
+        .sort()
+        .reverse();
+
+      const anneeCourante = filtreAnnee.value;
+      filtreAnnee.innerHTML = '';
+      if (annees.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = new Date().getFullYear().toString();
+        opt.textContent = opt.value;
+        filtreAnnee.appendChild(opt);
+      } else {
+        annees.forEach(function (a) {
+          const opt = document.createElement('option');
+          opt.value = a;
+          opt.textContent = a;
+          filtreAnnee.appendChild(opt);
+        });
+        if (annees.includes(anneeCourante)) filtreAnnee.value = anneeCourante;
+      }
+
+      const moisCourant = filtreMois.value;
+      filtreMois.innerHTML = '';
+      if (moisDisponibles.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = moisAffiche;
+        opt.textContent = nomDuMois(moisAffiche);
+        filtreMois.appendChild(opt);
+      } else {
+        moisDisponibles.forEach(function (m) {
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = nomDuMois(m) + ' (' + m + ')';
+          filtreMois.appendChild(opt);
+        });
+        if (moisDisponibles.includes(moisCourant)) {
+          filtreMois.value = moisCourant;
+        } else if (moisDisponibles.includes(moisAffiche)) {
+          filtreMois.value = moisAffiche;
+        }
+      }
+    }
+
+    function mettreAJourVisibilitePortee() {
+      const portee = filtrePortee.value;
+      blocFiltreAnnee.style.display = portee === 'annee' ? 'block' : 'none';
+      blocFiltreMois.style.display = portee === 'mois' ? 'block' : 'none';
+    }
+
+    function afficherHistoriqueComplet() {
+      peuplerSelecteursTemps();
+      mettreAJourVisibilitePortee();
+
+      const portee = filtrePortee.value;
+      const anneeSel = filtreAnnee.value;
+      const moisSel = filtreMois.value;
+      const catSel = filtreCatComplet.value;
+      const noteSel = filtreNoteComplet.value.trim().toLowerCase();
+      const minSel = parseFloat(filtreMinComplet.value);
+
+      const filtrees = depenses
+        .filter(function (d) {
+          if (portee === 'annee' && anneeSel && d.date.slice(0, 4) !== anneeSel) return false;
+          if (portee === 'mois' && moisSel && d.date.slice(0, 7) !== moisSel) return false;
+          if (catSel && d.categorie !== catSel) return false;
+          if (noteSel && !(d.note || '').toLowerCase().includes(noteSel)) return false;
+          if (!isNaN(minSel) && d.montant < minSel) return false;
+          return true;
+        })
+        .slice()
+        .sort(function (a, b) { return b.date.localeCompare(a.date); });
+
+      const total = filtrees.reduce(function (s, x) { return s + x.montant; }, 0);
+      document.getElementById('histo-complet-nb').textContent =
+        filtrees.length + (filtrees.length > 1 ? ' dépenses' : ' dépense');
+      document.getElementById('histo-complet-total').textContent = formaterCHF(total);
+
+      const conteneur = document.getElementById('contenu-histo-complet');
+      conteneur.innerHTML = '';
+
+      if (filtrees.length === 0) {
+        conteneur.innerHTML = '<p class="vide">Aucune dépense ne correspond aux filtres.</p>';
+        return;
+      }
+
+      filtrees.forEach(function (item) {
+        conteneur.appendChild(creerLigneDepense(item));
+      });
+    }
+
+    document.getElementById('btn-ouvrir-detail-categories').addEventListener('click', function () {
+      afficherDetailCategories();
+      vueDetailCategories.classList.add('ouverte');
+    });
+    document.getElementById('btn-fermer-detail-cat').addEventListener('click', function () {
+      vueDetailCategories.classList.remove('ouverte');
+    });
+
+    document.getElementById('btn-ouvrir-detail-mois').addEventListener('click', function () {
+      afficherDetailMois();
+      vueDetailMois.classList.add('ouverte');
+    });
+    document.getElementById('btn-fermer-detail-mois').addEventListener('click', function () {
+      vueDetailMois.classList.remove('ouverte');
+    });
+
+    document.getElementById('btn-menu-historique-complet').addEventListener('click', function () {
+      fermerMenu();
+      afficherHistoriqueComplet();
+      vueHistoriqueComplet.classList.add('ouverte');
+    });
+    document.getElementById('btn-fermer-histo-complet').addEventListener('click', function () {
+      vueHistoriqueComplet.classList.remove('ouverte');
+    });
+
+    [filtrePortee, filtreAnnee, filtreMois, filtreCatComplet, filtreNoteComplet, filtreMinComplet].forEach(function (el) {
+      el.addEventListener('input', afficherHistoriqueComplet);
+      el.addEventListener('change', afficherHistoriqueComplet);
+    });
+
+    document.getElementById('btn-reset-histo-complet').addEventListener('click', function () {
+      filtrePortee.value = 'tout';
+      filtreCatComplet.value = '';
+      filtreNoteComplet.value = '';
+      filtreMinComplet.value = '';
+      afficherHistoriqueComplet();
+    });
+
+    // ---------- Affichage principal (5 dépenses max dans l'historique du mois) ----------
+    function afficher() {
+      document.getElementById('mois-titre').textContent = nomDuMois(moisAffiche);
+
+      const duMois = depenses.filter(function (d) {
+        return d.date.slice(0, 7) === moisAffiche;
+      });
+
+      const somme = duMois.reduce(function (t, d) { return t + d.montant; }, 0);
+      document.getElementById('total').textContent = formaterCHF(somme);
+
+      const metaCompteur = document.getElementById('meta-compteur');
+      if (metaCompteur) {
+        const moyenne = duMois.length > 0 ? formaterCHF(somme / duMois.length) : '0.00 CHF';
+        metaCompteur.textContent = duMois.length + ' dépense(s) • moy. ' + moyenne;
+      }
+
+      const badgeTotalMois = document.getElementById('badge-total-mois');
+      if (badgeTotalMois) {
+        badgeTotalMois.textContent = duMois.length > 5 ? ('Tout voir (' + duMois.length + ') ›') : 'Détail ›';
+      }
+
+      const parCategorie = {};
+      duMois.forEach(function (d) {
+        parCategorie[d.categorie] = (parCategorie[d.categorie] || 0) + d.montant;
+      });
+
+      const conteneurCat = document.getElementById('categories');
+      conteneurCat.innerHTML = '';
+
+      const noms = Object.keys(parCategorie).sort(function (a, b) {
+        return parCategorie[b] - parCategorie[a];
+      });
+
+      if (noms.length === 0) {
+        conteneurCat.innerHTML = '<p class="vide">Aucune dépense ce mois-ci.</p>';
+      }
+
+      noms.forEach(function (nom) {
+        const part = somme > 0 ? (parCategorie[nom] / somme) * 100 : 0;
+        const bloc = document.createElement('div');
+        bloc.className = 'cat-ligne';
+        bloc.innerHTML =
+          '<div class="cat-haut nums">' +
+          '<span class="cat-nom">' + echapper(nom) + '</span>' +
+          '<span>' + formaterCHF(parCategorie[nom]) + ' (' + Math.round(part) + ' %)</span>' +
+          '</div>' +
+          '<div class="barre-fond"><div class="barre" style="width:' + part + '%"></div></div>';
+        conteneurCat.appendChild(bloc);
+      });
+
+      const liste = document.getElementById('liste');
+      liste.innerHTML = '';
+
+      if (duMois.length === 0) {
+        liste.innerHTML = '<p class="vide">Aucune dépense ce mois-ci.</p>';
+      } else {
+        const cinqDernieres = duMois
+          .slice()
+          .sort(function (a, b) { return b.date.localeCompare(a.date); })
+          .slice(0, 5);
+
+        cinqDernieres.forEach(function (d) {
+          liste.appendChild(creerLigneDepense(d));
+        });
+      }
+
+      if (vueDetailCategories.classList.contains('ouverte')) afficherDetailCategories();
+      if (vueDetailMois.classList.contains('ouverte')) afficherDetailMois();
+      if (vueHistoriqueComplet.classList.contains('ouverte')) afficherHistoriqueComplet();
+    }
+
+    // ---------- Formulaire ----------
+    const btnSupprimerEnCours = document.getElementById('supprimer-en-cours');
+
+    function reinitialiserFormulaire() {
+      idEnModification = null;
+      document.getElementById('montant').value = '';
+      document.getElementById('note').value = '';
+      document.getElementById('date').value = aujourdhui();
+      document.getElementById('titre-form').textContent = 'Nouvelle dépense';
+      document.getElementById('ajouter').textContent = 'Ajouter la dépense';
+      document.getElementById('annuler').style.display = 'none';
+      btnSupprimerEnCours.style.display = 'none';
+      apercuTicket.style.display = 'none';
+      ocrDetails.style.display = 'none';
+      scanRetour.classList.remove('visible');
+      scanStatut.textContent = '';
+    }
+
+    document.getElementById('ajouter').addEventListener('click', function () {
+      const montant = parseFloat(document.getElementById('montant').value);
+      const date = document.getElementById('date').value;
+      const categorie = document.getElementById('categorie').value;
+      const note = document.getElementById('note').value.trim();
+
+      if (isNaN(montant) || montant <= 0) {
+        alert('Entre un montant valide.');
+        return;
+      }
+      if (!date) {
+        alert('Choisis une date.');
+        return;
+      }
+      if (!note) {
+        alert('Entre une note (nom du magasin ou détail).');
+        document.getElementById('note').focus();
+        return;
+      }
+
+      const etaitModification = idEnModification !== null;
+
+      if (etaitModification) {
+        const d = depenses.find(function (x) { return String(x.id) === String(idEnModification); });
+        if (d) {
+          d.montant = montant;
+          d.date = date;
+          d.categorie = categorie;
+          d.note = note;
+        }
+      } else {
+        depenses.push({
+          id: genererId(),
+          montant: montant,
+          date: date,
+          categorie: categorie,
+          note: note
+        });
+      }
+
+      moisAffiche = date.slice(0, 7);
+      sauvegarder();
+      reinitialiserFormulaire();
+      afficher();
+      afficherToast(etaitModification ? 'Dépense mise à jour' : 'Dépense ajoutée');
+    });
+
+    document.getElementById('annuler').addEventListener('click', reinitialiserFormulaire);
+
+    btnSupprimerEnCours.addEventListener('click', function () {
+      if (idEnModification !== null) {
+        supprimer(idEnModification);
+      }
+    });
+
+    // ---------- Modifier / Supprimer ----------
+    function modifier(id) {
+      const d = depenses.find(function (x) { return String(x.id) === String(id); });
+      if (!d) return;
+      fermerToutesVuesDetail();
+      idEnModification = String(id);
+      document.getElementById('montant').value = d.montant;
+      document.getElementById('date').value = d.date;
+      document.getElementById('categorie').value = d.categorie;
+      document.getElementById('note').value = d.note || '';
+      document.getElementById('titre-form').textContent = 'Modifier la dépense';
+      document.getElementById('ajouter').textContent = 'Enregistrer les modifications';
+      document.getElementById('annuler').style.display = 'block';
+      btnSupprimerEnCours.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function supprimer(id) {
+      const cible = depenses.find(function (d) { return String(d.id) === String(id); });
+      const libelle = cible ? (cible.note + ' – ' + formaterCHF(cible.montant)) : 'cette dépense';
+      if (!confirm('Supprimer ' + libelle + ' ?')) return;
+      depenses = depenses.filter(function (d) { return String(d.id) !== String(id); });
+      if (String(idEnModification) === String(id)) reinitialiserFormulaire();
+      sauvegarder();
+      afficher();
+      afficherToast('Dépense supprimée');
+    }
+
+    // ---------- Navigation entre les mois ----------
+    document.getElementById('mois-prec').addEventListener('click', function () { changerMois(-1); });
+    document.getElementById('mois-suiv').addEventListener('click', function () { changerMois(1); });
+
+    // ---------- Démarrage ----------
+    appliquerTheme(localStorage.getItem(CLE_THEME) === '1');
+    appliquerCouleurAccent(localStorage.getItem(CLE_COULEUR) || '#1e6b38');
+    mettreAJourAffichageSauvegarde();
+    document.getElementById('date').value = aujourdhui();
+    afficher();
+    verifierRappelSauvegarde7Jours();
+  </script>
+</body>
+</html>
