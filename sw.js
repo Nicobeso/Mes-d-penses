@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mes-depenses-v6';
+const CACHE_NAME = 'mes-depenses-v7';
 const FICHIERS_A_METTRE_EN_CACHE = [
   './',
   './index.html',
