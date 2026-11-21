@@ -3,53 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" id="meta-theme-color" content="#2e7d32">
+  <meta name="theme-color" id="meta-theme-color" content="#1e6b38">
   <link rel="manifest" href="manifest.json">
   <title>Mes dépenses</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
-      --bg: #f4f6f8;
+      --bg: #eef2f0;
       --surface: #ffffff;
-      --surface-alt: #f8fafc;
-      --surface-muted: #eceff1;
-      --text: #222222;
-      --text-muted: #666666;
-      --border: #d0d7de;
-      --border-light: #eeeeee;
-      --accent: #2e7d32;
-      --accent-soft: #43a047;
+      --surface-alt: #f6f8f7;
+      --surface-muted: #e6ece8;
+      --text: #18201b;
+      --text-muted: #5c6b62;
+      --border: #d5ded8;
+      --border-light: #edf1ee;
+      --accent: #1e6b38;
+      --accent-hover: #17542b;
+      --accent-soft: #2e8b4d;
+      --accent-badge-bg: #e3f3e8;
+      --accent-badge-text: #16542b;
       --accent-text: #ffffff;
       --primary-action: #1565c0;
       --danger: #c62828;
-      --shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      --danger-bg: #fdecec;
+      --shadow: 0 4px 16px rgba(16, 32, 22, 0.06);
+      --shadow-float: 0 12px 32px rgba(16, 32, 22, 0.22);
     }
 
     body.dark {
-      --bg: #121614;
-      --surface: #1b221e;
-      --surface-alt: #151b18;
-      --surface-muted: #26302a;
-      --text: #eef3ef;
-      --text-muted: #a6b4aa;
-      --border: #323f37;
-      --border-light: #27322c;
-      --accent: #43a047;
-      --accent-soft: #66bb6a;
-      --accent-text: #0d1710;
+      --bg: #0f1411;
+      --surface: #18201b;
+      --surface-alt: #131915;
+      --surface-muted: #232e27;
+      --text: #edf3ef;
+      --text-muted: #9aa9a0;
+      --border: #2c3830;
+      --border-light: #222b25;
+      --accent: #389e5a;
+      --accent-hover: #45b369;
+      --accent-soft: #4eb870;
+      --accent-badge-bg: #1c3324;
+      --accent-badge-text: #7be09c;
+      --accent-text: #0b140e;
       --primary-action: #42a5f5;
       --danger: #ef5350;
-      --shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      --danger-bg: #361c1c;
+      --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      --shadow-float: 0 14px 36px rgba(0, 0, 0, 0.6);
     }
 
     * { box-sizing: border-box; }
     body {
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 16px;
+      padding: 16px 16px 48px;
       background: var(--bg);
       color: var(--text);
-      transition: background 0.2s ease, color 0.2s ease;
+      line-height: 1.45;
+      transition: background 0.22s ease, color 0.22s ease;
+    }
+
+    .app-conteneur {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .nums {
+      font-variant-numeric: tabular-nums;
     }
 
     .topbar {
@@ -57,14 +77,15 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 16px;
-      position: relative;
+      margin-bottom: 18px;
     }
 
     h1 {
       color: var(--accent);
       margin: 0;
-      font-size: 26px;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
       flex: 1;
       text-align: center;
     }
@@ -80,22 +101,25 @@
       height: 44px;
       flex-shrink: 0;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       background: var(--surface);
       color: var(--text);
-      font-size: 22px;
+      font-size: 20px;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: var(--shadow);
+      cursor: pointer;
     }
 
+    /* ----- Menu tiroir (3 traits) ----- */
     .menu-voile {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.48);
+      backdrop-filter: blur(2px);
       z-index: 900;
     }
     .menu-voile.ouvert {
@@ -105,15 +129,15 @@
     .menu-tiroir {
       position: fixed;
       top: 0;
-      right: -300px;
-      width: 285px;
-      max-width: 85vw;
+      right: -310px;
+      width: 292px;
+      max-width: 86vw;
       height: 100%;
       background: var(--surface);
       color: var(--text);
       z-index: 950;
-      padding: 18px;
-      box-shadow: -4px 0 18px rgba(0, 0, 0, 0.25);
+      padding: 20px;
+      box-shadow: var(--shadow-float);
       transition: right 0.22s ease;
       overflow-y: auto;
     }
@@ -137,32 +161,33 @@
       background: var(--surface-muted);
       color: var(--text);
       border: none;
-      border-radius: 8px;
+      border-radius: 9px;
       width: 34px;
       height: 34px;
-      font-size: 18px;
+      font-size: 17px;
+      cursor: pointer;
     }
 
     .menu-section-titre {
-      font-size: 12px;
-      font-weight: bold;
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
-      margin: 14px 0 8px;
+      margin: 16px 0 8px;
     }
 
     .theme-ligne {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: 10px;
+      padding: 11px 12px;
+      border-radius: 12px;
       background: var(--surface-alt);
       border: 1px solid var(--border);
     }
     .theme-ligne span {
-      font-weight: bold;
+      font-weight: 700;
       font-size: 15px;
     }
     button.btn-theme {
@@ -171,8 +196,9 @@
       border: none;
       border-radius: 8px;
       padding: 8px 12px;
-      font-size: 14px;
-      font-weight: bold;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .menu-actions {
@@ -184,51 +210,111 @@
     button.menu-action-btn {
       width: 100%;
       text-align: left;
-      padding: 12px;
+      padding: 12px 14px;
       font-size: 15px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--surface-alt);
       color: var(--text);
-      font-weight: bold;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .sauvegarde-statut {
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--text-muted);
       margin-top: 12px;
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
-    h2 { margin-top: 0; }
+    /* ----- Cartes & typographie ----- */
+    h2 {
+      margin: 0 0 12px;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
     .carte {
       background: var(--surface);
-      border-radius: 12px;
-      padding: 16px;
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 18px;
       margin-bottom: 16px;
       box-shadow: var(--shadow);
     }
-    label { display: block; margin-top: 10px; font-weight: bold; }
+
+    .mois-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .mois-nav button {
+      background: var(--surface-muted);
+      color: var(--text);
+      border: 1px solid var(--border);
+      width: 44px;
+      height: 44px;
+      font-size: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .mois-titre {
+      font-size: 19px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .total {
+      font-size: 32px;
+      font-weight: 800;
+      text-align: center;
+      color: var(--accent);
+      margin-top: 10px;
+      letter-spacing: -0.02em;
+    }
+    .mois-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-light);
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+      font-size: 14px;
+    }
     input, select {
       width: 100%;
-      padding: 12px;
+      padding: 12px 14px;
       font-size: 16px;
-      margin-top: 4px;
+      margin-top: 5px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 11px;
       background: var(--surface-alt);
       color: var(--text);
     }
+    input:focus, select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
     button.principal {
       width: 100%;
       background: var(--accent);
       color: var(--accent-text);
       border: none;
       padding: 14px;
-      font-size: 18px;
-      font-weight: bold;
-      border-radius: 10px;
-      margin-top: 16px;
+      font-size: 17px;
+      font-weight: 700;
+      border-radius: 12px;
+      margin-top: 18px;
+      cursor: pointer;
     }
     button.secondaire {
       width: 100%;
@@ -236,20 +322,31 @@
       color: var(--text);
       border: none;
       padding: 12px;
-      font-size: 16px;
-      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 12px;
       margin-top: 10px;
+      cursor: pointer;
     }
     button.supprimer-form {
       width: 100%;
-      background: transparent;
+      background: var(--danger-bg);
       color: var(--danger);
-      border: 1px solid var(--danger);
+      border: 1px solid transparent;
       padding: 11px;
       font-size: 15px;
-      font-weight: bold;
-      border-radius: 10px;
+      font-weight: 700;
+      border-radius: 12px;
       margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .scan-zone {
+      margin-bottom: 14px;
+      padding: 14px;
+      background: var(--surface-alt);
+      border: 1px dashed var(--border);
+      border-radius: 13px;
     }
     button.scan-btn {
       width: 100%;
@@ -257,48 +354,102 @@
       color: #ffffff;
       border: none;
       padding: 12px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 11px;
       margin-top: 10px;
+      cursor: pointer;
     }
-    .mois-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .mois-nav button {
-      background: var(--accent);
-      color: var(--accent-text);
-      border: none;
-      width: 48px;
-      height: 48px;
-      font-size: 22px;
-      border-radius: 50%;
-    }
-    .mois-titre {
-      font-size: 20px;
-      font-weight: bold;
-      text-transform: capitalize;
-    }
-    .total {
-      font-size: 30px;
-      font-weight: bold;
-      text-align: center;
-      color: var(--accent);
+    .scan-statut {
+      font-size: 13.5px;
+      color: var(--text-muted);
       margin-top: 8px;
     }
+    .apercu-ticket {
+      max-width: 100%;
+      max-height: 180px;
+      border-radius: 10px;
+      margin-top: 10px;
+      display: none;
+    }
+    details.ocr-brut {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    details.ocr-brut pre {
+      white-space: pre-wrap;
+      background: var(--surface-muted);
+      color: var(--text);
+      padding: 10px;
+      border-radius: 8px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .cat-ligne { margin-bottom: 14px; }
+    .cat-ligne:last-child { margin-bottom: 0; }
+    .cat-haut {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14.5px;
+      gap: 8px;
+    }
+    .cat-nom {
+      font-weight: 600;
+    }
+    .barre-fond {
+      background: var(--surface-muted);
+      border-radius: 999px;
+      height: 9px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .barre {
+      background: var(--accent-soft);
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
     .depense {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      padding: 10px 0;
+      padding: 12px 0;
       border-bottom: 1px solid var(--border-light);
     }
-    .depense:last-child { border-bottom: none; }
-    .info small { color: var(--text-muted); }
-    .montant { font-weight: bold; white-space: nowrap; }
+    .depense:last-child { border-bottom: none; padding-bottom: 0; }
+    .depense:first-child { padding-top: 0; }
+    .info-titre {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .badge-cat {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-badge-bg);
+      color: var(--accent-badge-text);
+    }
+    .info small {
+      display: block;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      margin-top: 3px;
+    }
+    .montant {
+      font-weight: 800;
+      font-size: 15.5px;
+      white-space: nowrap;
+    }
     .actions {
       display: flex;
       align-items: center;
@@ -308,71 +459,209 @@
     .actions button {
       background: var(--surface-muted);
       border: none;
-      border-radius: 8px;
-      font-size: 19px;
-      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 17px;
+      padding: 7px 10px;
+      cursor: pointer;
     }
     .btn-modif { color: var(--primary-action); }
     .btn-suppr { color: var(--danger); }
-    .vide { text-align: center; color: var(--text-muted); padding: 12px 0; }
-    .cat-ligne { margin-bottom: 12px; }
-    .cat-haut {
+    .vide {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 14px 0;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    /* ----- Pop-up rappel sauvegarde (7 jours) ----- */
+    .rappel-voile {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(2px);
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .rappel-voile.ouvert {
       display: flex;
-      justify-content: space-between;
-      font-size: 15px;
     }
-    .barre-fond {
-      background: var(--surface-muted);
-      border-radius: 6px;
-      height: 10px;
-      margin-top: 4px;
-      overflow: hidden;
+    .rappel-carte {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow-float);
+      border: 1px solid var(--border);
     }
-    .barre {
-      background: var(--accent-soft);
-      height: 100%;
-      border-radius: 6px;
+    .rappel-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-badge-bg);
+      color: var(--accent-badge-text);
+      margin-bottom: 10px;
     }
-    .scan-zone {
-      margin-top: 12px;
-      padding: 12px;
-      background: var(--surface-alt);
-      border: 1px dashed var(--border);
-      border-radius: 10px;
+    .rappel-carte h2 {
+      margin: 0 0 8px;
+      font-size: 19px;
     }
-    .scan-statut {
+    .rappel-carte p {
+      margin: 0 0 16px;
       font-size: 14px;
       color: var(--text-muted);
-      margin-top: 8px;
     }
-    .apercu-ticket {
-      max-width: 100%;
-      max-height: 180px;
-      border-radius: 8px;
-      margin-top: 8px;
-      display: none;
+    .rappel-boutons {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
     }
-    details.ocr-brut {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--text-muted);
+    .rappel-rangee {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
     }
-    details.ocr-brut pre {
-      white-space: pre-wrap;
+    button.rappel-primaire {
+      background: var(--accent);
+      color: var(--accent-text);
+      border: none;
+      border-radius: 11px;
+      padding: 12px;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.rappel-secondaire {
+      background: var(--primary-action);
+      color: #ffffff;
+      border: none;
+      border-radius: 11px;
+      padding: 12px;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.rappel-ignorer {
       background: var(--surface-muted);
       color: var(--text);
-      padding: 8px;
-      border-radius: 6px;
-      max-height: 140px;
-      overflow-y: auto;
+      border: none;
+      border-radius: 11px;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ----- Toast discret ----- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text);
+      color: var(--surface);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 1200;
+      white-space: nowrap;
+      max-width: 92vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: var(--shadow-float);
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="topbar-spacer" aria-hidden="true"></div>
-    <h1>Mes dépenses</h1>
-    <button type="button" class="menu-btn" id="btn-ouvrir-menu" aria-label="Ouvrir le menu">☰</button>
+  <div class="app-conteneur">
+    <div class="topbar">
+      <div class="topbar-spacer" aria-hidden="true"></div>
+      <h1>Mes dépenses</h1>
+      <button type="button" class="menu-btn" id="btn-ouvrir-menu" aria-label="Ouvrir le menu">☰</button>
+    </div>
+
+    <!-- Navigation par mois et total -->
+    <div class="carte">
+      <div class="mois-nav">
+        <button type="button" id="mois-prec" aria-label="Mois précédent">◀</button>
+        <div class="mois-titre" id="mois-titre"></div>
+        <button type="button" id="mois-suiv" aria-label="Mois suivant">▶</button>
+      </div>
+      <div class="total nums" id="total">0.00 CHF</div>
+      <div class="mois-meta nums">
+        <span id="meta-compteur">0 dépense</span>
+        <span id="meta-sauvegarde">Sauvegarde : jamais</span>
+      </div>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="carte">
+      <h2 id="titre-form">Nouvelle dépense</h2>
+
+      <div class="scan-zone">
+        <strong>Scanner une quittance</strong>
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
+        <button type="button" class="scan-btn" id="btn-scan">📷 Prendre en photo la quittance</button>
+        <div class="scan-statut" id="scan-statut">Prends une photo nette pour tenter d'extraire le montant et le magasin.</div>
+        <img id="apercu-ticket" class="apercu-ticket" alt="Aperçu de la quittance">
+        <details class="ocr-brut" id="ocr-details" style="display:none;">
+          <summary>Voir le texte brut détecté</summary>
+          <pre id="ocr-texte"></pre>
+        </details>
+      </div>
+
+      <label for="montant">Montant (CHF)</label>
+      <input type="number" id="montant" class="nums" step="0.05" min="0" inputmode="decimal" placeholder="ex. 23.90">
+
+      <label for="date">Date</label>
+      <input type="date" id="date" class="nums">
+
+      <label for="categorie">Catégorie</label>
+      <select id="categorie">
+        <option>Alimentation</option>
+        <option>Restaurant</option>
+        <option>Transport</option>
+        <option>Logement</option>
+        <option>Santé</option>
+        <option>Loisirs</option>
+        <option>Vêtements</option>
+        <option>Autre</option>
+      </select>
+
+      <label for="note">Note (magasin / détail obligatoire)</label>
+      <input type="text" id="note" required placeholder="ex. Migros">
+
+      <button type="button" class="principal" id="ajouter">Ajouter la dépense</button>
+      <button type="button" class="secondaire" id="annuler" style="display:none;">Annuler la modification</button>
+      <button type="button" class="supprimer-form" id="supprimer-en-cours" style="display:none;">🗑 Supprimer cette dépense</button>
+    </div>
+
+    <!-- Total par catégorie -->
+    <div class="carte">
+      <h2>Par catégorie</h2>
+      <div id="categories"></div>
+    </div>
+
+    <!-- Historique du mois (sous Par catégorie) -->
+    <div class="carte">
+      <h2>Historique du mois</h2>
+      <div id="liste"></div>
+    </div>
   </div>
 
   <!-- Voile et tiroir latéral (3 traits) -->
@@ -389,7 +678,7 @@
       <button type="button" class="btn-theme" id="btn-toggle-theme">Désactivé</button>
     </div>
 
-    <div class="menu-section-titre">Sauvegarde & Export</div>
+    <div class="menu-section-titre">Sauvegarde &amp; Export</div>
     <div class="menu-actions">
       <button type="button" class="menu-action-btn" id="btn-export-json">⬇ Exporter JSON</button>
       <button type="button" class="menu-action-btn" id="btn-export-csv">⬇ Exporter CSV</button>
@@ -402,69 +691,24 @@
     </div>
   </aside>
 
-  <!-- Navigation par mois et total -->
-  <div class="carte">
-    <div class="mois-nav">
-      <button type="button" id="mois-prec">◀</button>
-      <div class="mois-titre" id="mois-titre"></div>
-      <button type="button" id="mois-suiv">▶</button>
+  <!-- Pop-up rappel sauvegarde après 7 jours -->
+  <div class="rappel-voile" id="rappel-voile" role="dialog" aria-modal="true" aria-labelledby="rappel-titre">
+    <div class="rappel-carte">
+      <span class="rappel-badge">Rappel • 7 jours</span>
+      <h2 id="rappel-titre">Pense à sauvegarder tes dépenses</h2>
+      <p id="rappel-texte">Tu as des dépenses enregistrées dans le navigateur. Télécharge un fichier de sauvegarde pour les mettre en sécurité.</p>
+      <div class="rappel-boutons">
+        <div class="rappel-rangee">
+          <button type="button" class="rappel-primaire" id="rappel-export-json">⬇ Exporter JSON</button>
+          <button type="button" class="rappel-secondaire" id="rappel-export-csv">⬇ Exporter CSV</button>
+        </div>
+        <button type="button" class="rappel-ignorer" id="rappel-plus-tard">Plus tard</button>
+      </div>
     </div>
-    <div class="total" id="total">0.00 CHF</div>
   </div>
 
-  <!-- Formulaire -->
-  <div class="carte">
-    <h2 id="titre-form">Nouvelle dépense</h2>
-
-    <div class="scan-zone">
-      <strong>Scanner une quittance</strong>
-      <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
-      <button type="button" class="scan-btn" id="btn-scan">📷 Prendre en photo la quittance</button>
-      <div class="scan-statut" id="scan-statut">Prends une photo nette pour tenter d'extraire le montant et le magasin.</div>
-      <img id="apercu-ticket" class="apercu-ticket" alt="Aperçu de la quittance">
-      <details class="ocr-brut" id="ocr-details" style="display:none;">
-        <summary>Voir le texte brut détecté</summary>
-        <pre id="ocr-texte"></pre>
-      </details>
-    </div>
-
-    <label for="montant">Montant (CHF)</label>
-    <input type="number" id="montant" step="0.05" min="0" inputmode="decimal" placeholder="ex. 23.90">
-
-    <label for="date">Date</label>
-    <input type="date" id="date">
-
-    <label for="categorie">Catégorie</label>
-    <select id="categorie">
-      <option>Alimentation</option>
-      <option>Restaurant</option>
-      <option>Transport</option>
-      <option>Logement</option>
-      <option>Santé</option>
-      <option>Loisirs</option>
-      <option>Vêtements</option>
-      <option>Autre</option>
-    </select>
-
-    <label for="note">Note (magasin / détail obligatoire)</label>
-    <input type="text" id="note" required placeholder="ex. Migros">
-
-    <button type="button" class="principal" id="ajouter">Ajouter la dépense</button>
-    <button type="button" class="secondaire" id="annuler" style="display:none;">Annuler la modification</button>
-    <button type="button" class="supprimer-form" id="supprimer-en-cours" style="display:none;">🗑 Supprimer cette dépense</button>
-  </div>
-
-  <!-- Total par catégorie -->
-  <div class="carte">
-    <h2>Par catégorie</h2>
-    <div id="categories"></div>
-  </div>
-
-  <!-- Historique du mois (sous Par catégorie) -->
-  <div class="carte">
-    <h2>Historique du mois</h2>
-    <div id="liste"></div>
-  </div>
+  <!-- Toast discret -->
+  <div class="toast nums" id="toast" role="status" aria-live="polite"></div>
 
   <script>
     // ---------- Enregistrement Service Worker (PWA) ----------
@@ -472,6 +716,19 @@
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('./sw.js').catch(function () {});
       });
+    }
+
+    // ---------- Toast ----------
+    const toastEl = document.getElementById('toast');
+    let toastTimer = null;
+
+    function afficherToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toastEl.classList.remove('visible');
+      }, 2400);
     }
 
     // ---------- Thème sombre ----------
@@ -482,7 +739,7 @@
       document.body.classList.toggle('dark', Boolean(sombre));
       btnToggleTheme.textContent = sombre ? 'Activé' : 'Désactivé';
       if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', sombre ? '#121614' : '#2e7d32');
+        metaThemeColor.setAttribute('content', sombre ? '#0f1411' : '#1e6b38');
       }
       localStorage.setItem('modeSombre', sombre ? '1' : '0');
     }
@@ -490,6 +747,7 @@
     btnToggleTheme.addEventListener('click', function () {
       const estSombre = document.body.classList.contains('dark');
       appliquerTheme(!estSombre);
+      afficherToast(!estSombre ? 'Mode sombre activé' : 'Mode clair activé');
     });
 
     // ---------- Menu tiroir (3 traits) ----------
@@ -510,22 +768,46 @@
     document.getElementById('btn-fermer-menu').addEventListener('click', fermerMenu);
     menuVoile.addEventListener('click', fermerMenu);
 
-    // ---------- Données ----------
-    let depenses = JSON.parse(localStorage.getItem('depenses') || '[]');
+    // ---------- Données & Sauvegarde ----------
+    const CLE_DEPENSES = 'depenses';
+    const CLE_DERNIERE_SAUVEGARDE = 'derniereSauvegardeFichier';
+    const SEPT_JOURS_MS = 7 * 24 * 60 * 60 * 1000;
+
+    let depenses = JSON.parse(localStorage.getItem(CLE_DEPENSES) || '[]');
     let moisAffiche = new Date().toLocaleDateString('en-CA').slice(0, 7);
     let idEnModification = null;
 
-    function mettreAJourStatutSauvegardeLocale() {
+    function formaterDateCourte(timestamp) {
+      if (!timestamp) return 'jamais';
+      const d = new Date(Number(timestamp));
+      if (isNaN(d.getTime())) return 'jamais';
+      return d.toLocaleDateString('fr-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function mettreAJourAffichageSauvegarde() {
+      const derniere = localStorage.getItem(CLE_DERNIERE_SAUVEGARDE);
+      const texteDerniere = formaterDateCourte(derniere);
+      const metaSauvegarde = document.getElementById('meta-sauvegarde');
+      if (metaSauvegarde) {
+        metaSauvegarde.textContent = 'Export : ' + texteDerniere;
+      }
       const statut = document.getElementById('sauvegarde-statut');
       if (statut) {
         const heure = new Date().toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
-        statut.textContent = 'Enregistré automatiquement à ' + heure + ' (' + depenses.length + ' dépense(s)).';
+        statut.textContent =
+          'Local actif (' + depenses.length + ' dépense(s), maj ' + heure + '). ' +
+          'Dernier export fichier : ' + texteDerniere + '.';
       }
     }
 
     function sauvegarder() {
-      localStorage.setItem('depenses', JSON.stringify(depenses));
-      mettreAJourStatutSauvegardeLocale();
+      localStorage.setItem(CLE_DEPENSES, JSON.stringify(depenses));
+      mettreAJourAffichageSauvegarde();
+    }
+
+    function marquerExportEffectue() {
+      localStorage.setItem(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
+      mettreAJourAffichageSauvegarde();
     }
 
     function genererId() {
@@ -534,6 +816,36 @@
       }
       return String(Date.now()) + '-' + Math.random().toString(16).slice(2);
     }
+
+    // ---------- Pop-up rappel 7 jours ----------
+    const rappelVoile = document.getElementById('rappel-voile');
+    const rappelTexte = document.getElementById('rappel-texte');
+
+    function fermerRappelSauvegarde() {
+      rappelVoile.classList.remove('ouvert');
+    }
+
+    function verifierRappelSauvegarde7Jours() {
+      if (!Array.isArray(depenses) || depenses.length === 0) return;
+
+      const derniereStr = localStorage.getItem(CLE_DERNIERE_SAUVEGARDE);
+      const derniereTs = derniereStr ? Number(derniereStr) : 0;
+      const maintenant = Date.now();
+
+      if (!derniereTs || (maintenant - derniereTs) >= SEPT_JOURS_MS) {
+        if (!derniereTs) {
+          rappelTexte.textContent =
+            'Tu as ' + depenses.length + ' dépense(s) enregistrée(s) et aucune sauvegarde fichier effectuée. Exportez-les maintenant pour les conserver en sécurité.';
+        } else {
+          const jours = Math.floor((maintenant - derniereTs) / (24 * 60 * 60 * 1000));
+          rappelTexte.textContent =
+            'Cela fait ' + jours + ' jour(s) sans export de sauvegarde (' + depenses.length + ' dépense(s) au total). Lance un export maintenant ?';
+        }
+        rappelVoile.classList.add('ouvert');
+      }
+    }
+
+    document.getElementById('rappel-plus-tard').addEventListener('click', fermerRappelSauvegarde);
 
     // ---------- Outils ----------
     function aujourdhui() {
@@ -592,7 +904,7 @@
       return str;
     }
 
-    document.getElementById('btn-export-json').addEventListener('click', function () {
+    function lancerExportJSON() {
       const donneesExport = {
         application: 'Mes dépenses',
         devise: 'CHF',
@@ -601,10 +913,13 @@
       };
       const nomFichier = 'depenses-' + aujourdhui() + '.json';
       telechargerFichier(JSON.stringify(donneesExport, null, 2), nomFichier, 'application/json;charset=utf-8');
+      marquerExportEffectue();
+      fermerRappelSauvegarde();
       sauvegardeStatut.textContent = 'Export JSON téléchargé (' + depenses.length + ' dépense(s)).';
-    });
+      afficherToast('Sauvegarde JSON exportée');
+    }
 
-    document.getElementById('btn-export-csv').addEventListener('click', function () {
+    function lancerExportCSV() {
       const lignes = ['id;date;categorie;note;montant_chf;devise'];
       depenses.forEach(function (d) {
         lignes.push([
@@ -619,8 +934,16 @@
       const csvAvecBom = '\uFEFF' + lignes.join('\n');
       const nomFichier = 'depenses-' + aujourdhui() + '.csv';
       telechargerFichier(csvAvecBom, nomFichier, 'text/csv;charset=utf-8');
+      marquerExportEffectue();
+      fermerRappelSauvegarde();
       sauvegardeStatut.textContent = 'Export CSV téléchargé (' + depenses.length + ' dépense(s)).';
-    });
+      afficherToast('Sauvegarde CSV exportée');
+    }
+
+    document.getElementById('btn-export-json').addEventListener('click', lancerExportJSON);
+    document.getElementById('btn-export-csv').addEventListener('click', lancerExportCSV);
+    document.getElementById('rappel-export-json').addEventListener('click', lancerExportJSON);
+    document.getElementById('rappel-export-csv').addEventListener('click', lancerExportCSV);
 
     function parserLigneCSV(ligne, separateur) {
       const champs = [];
@@ -726,6 +1049,7 @@
 
         if (candidates.length === 0) {
           sauvegardeStatut.textContent = 'Aucune dépense valide trouvée dans le fichier.';
+          afficherToast('Aucune ligne valide trouvée');
           return;
         }
 
@@ -744,8 +1068,10 @@
         moisAffiche = candidates[candidates.length - 1].date.slice(0, 7);
         afficher();
         sauvegardeStatut.textContent = ajoutes + ' dépense(s) importée(s) depuis ' + fichier.name + '.';
+        afficherToast(ajoutes + ' dépense(s) importée(s)');
       } catch (err) {
         sauvegardeStatut.textContent = 'Erreur de lecture du fichier : vérifie le format JSON ou CSV.';
+        afficherToast('Erreur lors de l’import');
       }
     });
 
@@ -880,6 +1206,13 @@
       const somme = duMois.reduce(function (t, d) { return t + d.montant; }, 0);
       document.getElementById('total').textContent = formaterCHF(somme);
 
+      const metaCompteur = document.getElementById('meta-compteur');
+      if (metaCompteur) {
+        const moyenne = duMois.length > 0 ? formaterCHF(somme / duMois.length) : '0.00 CHF';
+        metaCompteur.textContent =
+          duMois.length + ' dépense(s) • moy. ' + moyenne;
+      }
+
       const parCategorie = {};
       duMois.forEach(function (d) {
         parCategorie[d.categorie] = (parCategorie[d.categorie] || 0) + d.montant;
@@ -901,8 +1234,8 @@
         const bloc = document.createElement('div');
         bloc.className = 'cat-ligne';
         bloc.innerHTML =
-          '<div class="cat-haut">' +
-          '<span>' + echapper(nom) + '</span>' +
+          '<div class="cat-haut nums">' +
+          '<span class="cat-nom">' + echapper(nom) + '</span>' +
           '<span>' + formaterCHF(parCategorie[nom]) + ' (' + Math.round(part) + ' %)</span>' +
           '</div>' +
           '<div class="barre-fond"><div class="barre" style="width:' + part + '%"></div></div>';
@@ -926,11 +1259,14 @@
         ligne.className = 'depense';
         ligne.innerHTML =
           '<div class="info">' +
-          '<div>' + echapper(d.categorie) + (d.note ? ' – ' + echapper(d.note) : '') + '</div>' +
-          '<small>' + d.date + '</small>' +
+          '<div class="info-titre">' +
+          '<span class="badge-cat">' + echapper(d.categorie) + '</span>' +
+          '<span>' + echapper(d.note || '') + '</span>' +
+          '</div>' +
+          '<small class="nums">' + d.date + '</small>' +
           '</div>' +
           '<div class="actions">' +
-          '<span class="montant">' + formaterCHF(d.montant) + '</span>' +
+          '<span class="montant nums">' + formaterCHF(d.montant) + '</span>' +
           '<button type="button" class="btn-modif" aria-label="Modifier" onclick="modifier(\'' + d.id + '\')">✎</button>' +
           '<button type="button" class="btn-suppr" aria-label="Supprimer" onclick="supprimer(\'' + d.id + '\')">✕</button>' +
           '</div>';
@@ -975,7 +1311,9 @@
         return;
       }
 
-      if (idEnModification !== null) {
+      const etaitModification = idEnModification !== null;
+
+      if (etaitModification) {
         const d = depenses.find(function (x) { return String(x.id) === String(idEnModification); });
         if (d) {
           d.montant = montant;
@@ -997,6 +1335,7 @@
       sauvegarder();
       reinitialiserFormulaire();
       afficher();
+      afficherToast(etaitModification ? 'Dépense mise à jour' : 'Dépense ajoutée');
     });
 
     document.getElementById('annuler').addEventListener('click', reinitialiserFormulaire);
@@ -1031,6 +1370,7 @@
       if (String(idEnModification) === String(id)) reinitialiserFormulaire();
       sauvegarder();
       afficher();
+      afficherToast('Dépense supprimée');
     }
 
     // ---------- Navigation entre les mois ----------
@@ -1039,9 +1379,10 @@
 
     // ---------- Démarrage ----------
     appliquerTheme(localStorage.getItem('modeSombre') === '1');
-    mettreAJourStatutSauvegardeLocale();
+    mettreAJourAffichageSauvegarde();
     document.getElementById('date').value = aujourdhui();
     afficher();
+    verifierRappelSauvegarde7Jours();
   </script>
 </body>
 </html>
