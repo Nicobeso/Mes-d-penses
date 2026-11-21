@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes dépenses</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f4f6f8;
+      color: #222;
+    }
+    h1 { color: #2e7d32; text-align: center; margin-top: 0; }
+    h2 { margin-top: 0; }
+    .carte {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+    }
+    button.principal {
+      width: 100%;
+      background: #2e7d32;
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 10px;
+      margin-top: 16px;
+    }
+    button.secondaire {
+      width: 100%;
+      background: #eceff1;
+      color: #333;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    button.historique-btn {
+      width: 100%;
+      background: #1b5e20;
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 17px;
+      font-weight: bold;
+      border-radius: 10px;
+    }
+    button.scan-btn {
+      width: 100%;
+      background: #1565c0;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+    .sauvegarde-grille {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    button.btn-export {
+      background: #00695c;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 15px;
+      border-radius: 10px;
+    }
+    button.btn-import {
+      grid-column: span 2;
+      background: #37474f;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 15px;
+      border-radius: 10px;
+    }
+    .sauvegarde-statut {
+      font-size: 13px;
+      color: #455a64;
+      margin-top: 10px;
+    }
+    .mois-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mois-nav button {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      width: 48px;
+      height: 48px;
+      font-size: 22px;
+      border-radius: 50%;
+    }
+    .mois-titre {
+      font-size: 20px;
+      font-weight: bold;
+      text-transform: capitalize;
+    }
+    .total {
+      font-size: 30px;
+      font-weight: bold;
+      text-align: center;
+      color: #2e7d32;
+      margin-top: 8px;
+    }
+    .info small { color: #777; }
+    .montant { font-weight: bold; white-space: nowrap; }
+    .actions button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      padding: 4px;
+    }
+    .btn-modif { color: #1565c0; }
+    .btn-suppr { color: #c62828; }
+    .vide { text-align: center; color: #888; padding: 16px 0; }
+    .cat-ligne { margin-bottom: 12px; }
+    .cat-haut {
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+    }
+    .barre-fond {
+      background: #e0e0e0;
+      border-radius: 6px;
+      height: 10px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .barre {
+      background: #43a047;
+      height: 100%;
+      border-radius: 6px;
+    }
+    .scan-zone {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f8fafc;
+      border: 1px dashed #90a4ae;
+      border-radius: 10px;
+    }
+    .scan-statut {
+      font-size: 14px;
+      color: #37474f;
+      margin-top: 8px;
+    }
+    .apercu-ticket {
+      max-width: 100%;
+      max-height: 180px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: none;
+    }
+    details.ocr-brut {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #546e7a;
+    }
+    details.ocr-brut pre {
+      white-space: pre-wrap;
+      background: #eceff1;
+      padding: 8px;
+      border-radius: 6px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    /* ----- Plein écran Historique filtrable ----- */
+    .ecran-historique {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #f4f6f8;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .ecran-historique.ouvert {
+      display: block;
+    }
+    .entete-histo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .entete-histo h2 {
+      margin: 0;
+      font-size: 20px;
+      text-transform: capitalize;
+    }
+    .btn-fermer {
+      background: #222;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 15px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+    .filtres-grille {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .filtres-grille label {
+      margin-top: 0;
+      font-size: 13px;
+    }
+    .filtres-grille input,
+    .filtres-grille select {
+      padding: 9px;
+      font-size: 14px;
+    }
+    .resume-filtre {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #2e7d32;
+    }
+    .btn-reset-filtres {
+      background: #eceff1;
+      color: #333;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    table.histo-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: white;
+    }
+    table.histo-table th,
+    table.histo-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      vertical-align: middle;
+    }
+    table.histo-table th.triable {
+      cursor: pointer;
+      user-select: none;
+      background: #f1f8e9;
+      color: #1b5e20;
+      white-space: nowrap;
+    }
+    table.histo-table td.num,
+    table.histo-table th.num {
+      text-align: right;
+      white-space: nowrap;
+    }
+    table.histo-table td.col-actions {
+      white-space: nowrap;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mes dépenses</h1>
+
+  <!-- Navigation par mois et total -->
+  <div class="carte">
+    <div class="mois-nav">
+      <button id="mois-prec">◀</button>
+      <div class="mois-titre" id="mois-titre"></div>
+      <button id="mois-suiv">▶</button>
+    </div>
+    <div class="total" id="total">0.00 CHF</div>
+  </div>
+
+  <!-- Bouton plein écran Historique du mois -->
+  <div class="carte">
+    <button type="button" class="historique-btn" id="btn-ouvrir-historique">
+      📋 Historique du mois (<span id="compteur-mois">0</span>)
+    </button>
+  </div>
+
+  <!-- Formulaire -->
+  <div class="carte">
+    <h2 id="titre-form">Nouvelle dépense</h2>
+
+    <div class="scan-zone">
+      <strong>Scanner une quittance</strong>
+      <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
+      <button type="button" class="scan-btn" id="btn-scan">📷 Prendre en photo la quittance</button>
+      <div class="scan-statut" id="scan-statut">Prends une photo nette pour tenter d'extraire le montant et le magasin.</div>
+      <img id="apercu-ticket" class="apercu-ticket" alt="Aperçu de la quittance">
+      <details class="ocr-brut" id="ocr-details" style="display:none;">
+        <summary>Voir le texte brut détecté</summary>
+        <pre id="ocr-texte"></pre>
+      </details>
+    </div>
+
+    <label for="montant">Montant (CHF)</label>
+    <input type="number" id="montant" step="0.05" min="0" inputmode="decimal" placeholder="ex. 23.90">
+
+    <label for="date">Date</label>
+    <input type="date" id="date">
+
+    <label for="categorie">Catégorie</label>
+    <select id="categorie">
+      <option>Alimentation</option>
+      <option>Restaurant</option>
+      <option>Transport</option>
+      <option>Logement</option>
+      <option>Santé</option>
+      <option>Loisirs</option>
+      <option>Vêtements</option>
+      <option>Autre</option>
+    </select>
+
+    <label for="note">Note (magasin / détail obligatoire)</label>
+    <input type="text" id="note" required placeholder="ex. Migros">
+
+    <button class="principal" id="ajouter">Ajouter la dépense</button>
+    <button class="secondaire" id="annuler" style="display:none;">Annuler la modification</button>
+  </div>
+
+  <!-- Total par catégorie -->
+  <div class="carte">
+    <h2>Par catégorie</h2>
+    <div id="categories"></div>
+  </div>
+
+  <!-- Sauvegarde & Export CSV / JSON -->
+  <div class="carte">
+    <h2>Sauvegarde &amp; Export</h2>
+    <div class="sauvegarde-grille">
+      <button type="button" class="btn-export" id="btn-export-json">⬇ Exporter JSON</button>
+      <button type="button" class="btn-export" id="btn-export-csv">⬇ Exporter CSV</button>
+      <button type="button" class="btn-import" id="btn-import">⬆ Importer un fichier JSON ou CSV</button>
+      <input type="file" id="import-input" accept=".json,.csv,application/json,text/csv" style="display:none;">
+    </div>
+    <div class="sauvegarde-statut" id="sauvegarde-statut">
+      Sauvegarde locale active dans le navigateur. Exporte régulièrement un fichier JSON ou CSV.
+    </div>
+  </div>
+
+  <!-- Vue plein écran : Historique du mois avec colonnes filtrables -->
+  <div class="ecran-historique" id="ecran-historique" role="dialog" aria-modal="true">
+    <div class="entete-histo">
+      <h2 id="histo-titre-mois">Historique</h2>
+      <button type="button" class="btn-fermer" id="btn-fermer-historique">✕ Fermer</button>
+    </div>
+
+    <div class="carte">
+      <div class="filtres-grille">
+        <div>
+          <label for="filtre-date">Colonne Date</label>
+          <input type="date" id="filtre-date">
+        </div>
+        <div>
+          <label for="filtre-categorie">Colonne Catégorie</label>
+          <select id="filtre-categorie">
+            <option value="">Toutes</option>
+            <option>Alimentation</option>
+            <option>Restaurant</option>
+            <option>Transport</option>
+            <option>Logement</option>
+            <option>Santé</option>
+            <option>Loisirs</option>
+            <option>Vêtements</option>
+            <option>Autre</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtre-note">Colonne Note / Magasin</label>
+          <input type="text" id="filtre-note" placeholder="ex. Migros">
+        </div>
+        <div>
+          <label for="filtre-montant-min">Montant min. (CHF)</label>
+          <input type="number" id="filtre-montant-min" step="0.05" min="0" inputmode="decimal" placeholder="ex. 10">
+        </div>
+      </div>
+
+      <button type="button" class="btn-reset-filtres" id="btn-reset-filtres">Réinitialiser les filtres</button>
+
+      <div class="resume-filtre">
+        <span id="histo-nb-resultats">0 ligne</span>
+        <span id="histo-total-filtre">0.00 CHF</span>
+      </div>
+    </div>
+
+    <div class="carte">
+      <div class="table-wrap">
+        <table class="histo-table">
+          <thead>
+            <tr>
+              <th class="triable" data-tri="date">Date ↕</th>
+              <th class="triable" data-tri="categorie">Catégorie ↕</th>
+              <th class="triable" data-tri="note">Note ↕</th>
+              <th class="triable num" data-tri="montant">Montant ↕</th>
+              <th class="num">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="histo-corps"></tbody>
+        </table>
+      </div>
+      <div id="histo-vide" class="vide" style="display:none;">Aucune dépense ne correspond aux filtres.</div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Données ----------
+    let depenses = JSON.parse(localStorage.getItem('depenses') || '[]');
+    let moisAffiche = new Date().toLocaleDateString('en-CA').slice(0, 7);
+    let idEnModification = null;
+
+    // État du tri dans l'historique plein écran
+    let colonneTri = 'date';
+    let ordreTriDesc = true;
+
+    function sauvegarder() {
+      localStorage.setItem('depenses', JSON.stringify(depenses));
+    }
+
+    function genererId() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      return String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+    }
+
+    // ---------- Outils ----------
+    function aujourdhui() {
+      return new Date().toLocaleDateString('en-CA');
+    }
+
+    function formaterCHF(nombre) {
+      return nombre.toLocaleString('de-CH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + ' CHF';
+    }
+
+    function echapper(texte) {
+      const div = document.createElement('div');
+      div.textContent = texte;
+      return div.innerHTML;
+    }
+
+    function nomDuMois(moisTexte) {
+      const parties = moisTexte.split('-');
+      const date = new Date(parseInt(parties[0], 10), parseInt(parties[1], 10) - 1, 1);
+      return date.toLocaleDateString('fr-CH', { month: 'long', year: 'numeric' });
+    }
+
+    function changerMois(decalage) {
+      const parties = moisAffiche.split('-');
+      const date = new Date(parseInt(parties[0], 10), parseInt(parties[1], 10) - 1 + decalage, 1);
+      const annee = date.getFullYear();
+      const mois = String(date.getMonth() + 1).padStart(2, '0');
+      moisAffiche = annee + '-' + mois;
+      afficher();
+    }
+
+    // ---------- Export & Import JSON / CSV ----------
+    const sauvegardeStatut = document.getElementById('sauvegarde-statut');
+    const importInput = document.getElementById('import-input');
+
+    function telechargerFichier(contenu, nomFichier, typeMime) {
+      const blob = new Blob([contenu], { type: typeMime });
+      const url = URL.createObjectURL(blob);
+      const lien = document.createElement('a');
+      lien.href = url;
+      lien.download = nomFichier;
+      document.body.appendChild(lien);
+      lien.click();
+      document.body.removeChild(lien);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    function echapperCSV(valeur) {
+      const str = String(valeur == null ? '' : valeur);
+      if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    document.getElementById('btn-export-json').addEventListener('click', function () {
+      const donneesExport = {
+        application: 'Mes dépenses',
+        devise: 'CHF',
+        exporteLe: new Date().toISOString(),
+        depenses: depenses
+      };
+      const nomFichier = 'depenses-' + aujourdhui() + '.json';
+      telechargerFichier(JSON.stringify(donneesExport, null, 2), nomFichier, 'application/json;charset=utf-8');
+      sauvegardeStatut.textContent = 'Export JSON téléchargé (' + depenses.length + ' dépense(s)).';
+    });
+
+    document.getElementById('btn-export-csv').addEventListener('click', function () {
+      const lignes = ['id;date;categorie;note;montant_chf;devise'];
+      depenses.forEach(function (d) {
+        lignes.push([
+          echapperCSV(d.id),
+          echapperCSV(d.date),
+          echapperCSV(d.categorie),
+          echapperCSV(d.note),
+          echapperCSV(Number(d.montant).toFixed(2)),
+          'CHF'
+        ].join(';'));
+      });
+      const csvAvecBom = '\uFEFF' + lignes.join('\n');
+      const nomFichier = 'depenses-' + aujourdhui() + '.csv';
+      telechargerFichier(csvAvecBom, nomFichier, 'text/csv;charset=utf-8');
+      sauvegardeStatut.textContent = 'Export CSV téléchargé (' + depenses.length + ' dépense(s)).';
+    });
+
+    function parserLigneCSV(ligne, separateur) {
+      const champs = [];
+      let courant = '';
+      let entreGuillemets = false;
+      for (let i = 0; i < ligne.length; i++) {
+        const ch = ligne[i];
+        if (entreGuillemets) {
+          if (ch === '"' && ligne[i + 1] === '"') {
+            courant += '"';
+            i++;
+          } else if (ch === '"') {
+            entreGuillemets = false;
+          } else {
+            courant += ch;
+          }
+        } else if (ch === '"') {
+          entreGuillemets = true;
+        } else if (ch === separateur) {
+          champs.push(courant);
+          courant = '';
+        } else {
+          courant += ch;
+        }
+      }
+      champs.push(courant);
+      return champs;
+    }
+
+    function normaliserDepenseImportee(item) {
+      if (!item || typeof item !== 'object') return null;
+      const montant = parseFloat(String(item.montant != null ? item.montant : item.montant_chf).replace(',', '.'));
+      const date = String(item.date || '').trim();
+      const categorie = String(item.categorie || 'Autre').trim() || 'Autre';
+      const note = String(item.note || '').trim();
+      if (isNaN(montant) || montant <= 0) return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+      if (!note) return null;
+      return {
+        id: item.id ? String(item.id) : genererId(),
+        montant: montant,
+        date: date,
+        categorie: categorie,
+        note: note
+      };
+    }
+
+    function parserImportCSV(texte) {
+      const propre = texte.replace(/^\uFEFF/, '').trim();
+      if (!propre) return [];
+      const lignes = propre.split(/\r?\n/).filter(function (l) { return l.trim() !== ''; });
+      if (lignes.length === 0) return [];
+
+      const sep = lignes[0].includes(';') ? ';' : ',';
+      const premiere = parserLigneCSV(lignes[0], sep).map(function (c) { return c.trim().toLowerCase(); });
+      const aEntete = premiere.includes('montant') || premiere.includes('montant_chf') || premiere.includes('date');
+      const debutIndex = aEntete ? 1 : 0;
+
+      const idxId = aEntete ? premiere.indexOf('id') : -1;
+      const idxDate = aEntete ? premiere.indexOf('date') : 0;
+      const idxCat = aEntete ? premiere.indexOf('categorie') : 1;
+      const idxNote = aEntete ? premiere.indexOf('note') : 2;
+      const idxMontant = aEntete
+        ? (premiere.indexOf('montant_chf') !== -1 ? premiere.indexOf('montant_chf') : premiere.indexOf('montant'))
+        : 3;
+
+      const resultat = [];
+      for (let i = debutIndex; i < lignes.length; i++) {
+        const cols = parserLigneCSV(lignes[i], sep);
+        const obj = {
+          id: idxId >= 0 ? cols[idxId] : undefined,
+          date: cols[idxDate],
+          categorie: cols[idxCat],
+          note: cols[idxNote],
+          montant: cols[idxMontant]
+        };
+        const valide = normaliserDepenseImportee(obj);
+        if (valide) resultat.push(valide);
+      }
+      return resultat;
+    }
+
+    document.getElementById('btn-import').addEventListener('click', function () {
+      importInput.value = '';
+      importInput.click();
+    });
+
+    importInput.addEventListener('change', async function () {
+      const fichier = importInput.files && importInput.files[0];
+      if (!fichier) return;
+
+      try {
+        const contenu = await fichier.text();
+        let candidates = [];
+
+        if (fichier.name.toLowerCase().endsWith('.json') || contenu.trim().startsWith('{') || contenu.trim().startsWith('[')) {
+          const parsed = JSON.parse(contenu);
+          const listeBrute = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.depenses) ? parsed.depenses : []);
+          candidates = listeBrute.map(normaliserDepenseImportee).filter(Boolean);
+        } else {
+          candidates = parserImportCSV(contenu);
+        }
+
+        if (candidates.length === 0) {
+          sauvegardeStatut.textContent = 'Aucune dépense valide trouvée dans le fichier.';
+          return;
+        }
+
+        const idsExistants = new Set(depenses.map(function (d) { return String(d.id); }));
+        let ajoutes = 0;
+        candidates.forEach(function (item) {
+          if (idsExistants.has(String(item.id))) {
+            item.id = genererId();
+          }
+          idsExistants.add(String(item.id));
+          depenses.push(item);
+          ajoutes++;
+        });
+
+        sauvegarder();
+        moisAffiche = candidates[candidates.length - 1].date.slice(0, 7);
+        afficher();
+        sauvegardeStatut.textContent = ajoutes + ' dépense(s) importée(s) depuis ' + fichier.name + '.';
+      } catch (err) {
+        sauvegardeStatut.textContent = 'Erreur de lecture du fichier : vérifie le format JSON ou CSV.';
+      }
+    });
+
+    // ---------- Scan OCR de quittance ----------
+    function extraireMontantDepuisTexte(texte) {
+      const candidats = [];
+      const regex = /(?:chf|fr\.?|total|montant|summe|betrag)?\s*[:=]?\s*(\d{1,3}(?:['’\s]\d{3})*[.,]\d{2})/gi;
+      let match;
+      while ((match = regex.exec(texte)) !== null) {
+        const brut = match[1].replace(/['’\s]/g, '').replace(',', '.');
+        const val = parseFloat(brut);
+        if (!isNaN(val) && val > 0 && val < 100000) {
+          candidats.push({ valeur: val, contexte: match[0].toLowerCase() });
+        }
+      }
+      if (candidats.length === 0) return null;
+
+      const prioritaire = candidats.find(function (c) {
+        return c.contexte.includes('total') || c.contexte.includes('chf') || c.contexte.includes('fr');
+      });
+      if (prioritaire) return prioritaire.valeur;
+
+      candidats.sort(function (a, b) { return b.valeur - a.valeur; });
+      return candidats[0].valeur;
+    }
+
+    function detecterMagasin(texte) {
+      const minTexte = texte.toLowerCase();
+      const enseignes = [
+        { motif: 'migros', nom: 'Migros' },
+        { motif: 'coop', nom: 'Coop' },
+        { motif: 'aldi', nom: 'Aldi' },
+        { motif: 'lidl', nom: 'Lidl' },
+        { motif: 'denner', nom: 'Denner' },
+        { motif: 'manor', nom: 'Manor' },
+        { motif: 'ikea', nom: 'IKEA' },
+        { motif: 'mediamarkt', nom: 'MediaMarkt' },
+        { motif: 'fust', nom: 'Fust' },
+        { motif: 'interdiscount', nom: 'Interdiscount' },
+        { motif: 'galaxus', nom: 'Galaxus' },
+        { motif: 'digitec', nom: 'Digitec' },
+        { motif: 'cff', nom: 'CFF' },
+        { motif: 'sbb', nom: 'SBB' },
+        { motif: 'ffs', nom: 'FFS' }
+      ];
+
+      for (let i = 0; i < enseignes.length; i++) {
+        if (minTexte.includes(enseignes[i].motif)) {
+          return enseignes[i].nom;
+        }
+      }
+      return '';
+    }
+
+    const cameraInput = document.getElementById('camera-input');
+    const btnScan = document.getElementById('btn-scan');
+    const scanStatut = document.getElementById('scan-statut');
+    const apercuTicket = document.getElementById('apercu-ticket');
+    const ocrDetails = document.getElementById('ocr-details');
+    const ocrTexte = document.getElementById('ocr-texte');
+
+    btnScan.addEventListener('click', function () {
+      cameraInput.value = '';
+      cameraInput.click();
+    });
+
+    cameraInput.addEventListener('change', async function () {
+      const fichier = cameraInput.files && cameraInput.files[0];
+      if (!fichier) return;
+
+      const urlApercu = URL.createObjectURL(fichier);
+      apercuTicket.src = urlApercu;
+      apercuTicket.style.display = 'block';
+      ocrDetails.style.display = 'none';
+
+      if (typeof Tesseract === 'undefined') {
+        scanStatut.textContent = 'Module OCR indisponible hors ligne. Saisis le montant et la note manuellement.';
+        return;
+      }
+
+      scanStatut.textContent = 'Analyse de la quittance en cours...';
+      btnScan.disabled = true;
+
+      try {
+        const resultat = await Tesseract.recognize(fichier, 'fra+deu', {
+          logger: function (m) {
+            if (m.status === 'recognizing text' && typeof m.progress === 'number') {
+              scanStatut.textContent = 'Lecture du texte : ' + Math.round(m.progress * 100) + ' %';
+            }
+          }
+        });
+
+        const texte = (resultat && resultat.data && resultat.data.text) ? resultat.data.text.trim() : '';
+        ocrTexte.textContent = texte || '(Aucun texte reconnu)';
+        ocrDetails.style.display = 'block';
+
+        const montantDetecte = extraireMontantDepuisTexte(texte);
+        const noteInput = document.getElementById('note');
+        const magasinDetecte = detecterMagasin(texte);
+
+        if (montantDetecte !== null) {
+          document.getElementById('montant').value = montantDetecte.toFixed(2);
+        }
+
+        if (magasinDetecte) {
+          noteInput.value = magasinDetecte;
+        }
+
+        const resumeParties = [];
+        if (montantDetecte !== null) resumeParties.push('Montant : ' + formaterCHF(montantDetecte));
+        if (magasinDetecte) {
+          resumeParties.push('Magasin : ' + magasinDetecte);
+        } else {
+          resumeParties.push('Magasin non reconnu : saisis la note manuellement');
+        }
+        scanStatut.textContent = resumeParties.join(' — ');
+      } catch (err) {
+        scanStatut.textContent = 'Erreur pendant le scan. Saisis le montant et la note manuellement.';
+      } finally {
+        btnScan.disabled = false;
+      }
+    });
+
+    // ---------- Historique plein écran filtrable ----------
+    const ecranHistorique = document.getElementById('ecran-historique');
+    const filtreDate = document.getElementById('filtre-date');
+    const filtreCategorie = document.getElementById('filtre-categorie');
+    const filtreNote = document.getElementById('filtre-note');
+    const filtreMontantMin = document.getElementById('filtre-montant-min');
+
+    function ouvrirHistorique() {
+      ecranHistorique.classList.add('ouvert');
+      afficherHistoriquePleinEcran();
+    }
+
+    function fermerHistorique() {
+      ecranHistorique.classList.remove('ouvert');
+    }
+
+    function afficherHistoriquePleinEcran() {
+      document.getElementById('histo-titre-mois').textContent = 'Historique — ' + nomDuMois(moisAffiche);
+
+      const duMois = depenses.filter(function (d) {
+        return d.date.slice(0, 7) === moisAffiche;
+      });
+
+      const valDate = filtreDate.value.trim();
+      const valCat = filtreCategorie.value;
+      const valNote = filtreNote.value.trim().toLowerCase();
+      const valMin = parseFloat(filtreMontantMin.value);
+
+      const filtrees = duMois.filter(function (d) {
+        if (valDate && d.date !== valDate) return false;
+        if (valCat && d.categorie !== valCat) return false;
+        if (valNote && !(d.note || '').toLowerCase().includes(valNote)) return false;
+        if (!isNaN(valMin) && d.montant < valMin) return false;
+        return true;
+      });
+
+      filtrees.sort(function (a, b) {
+        let cmp = 0;
+        if (colonneTri === 'montant') {
+          cmp = a.montant - b.montant;
+        } else if (colonneTri === 'categorie') {
+          cmp = a.categorie.localeCompare(b.categorie, 'fr-CH');
+        } else if (colonneTri === 'note') {
+          cmp = (a.note || '').localeCompare(b.note || '', 'fr-CH');
+        } else {
+          cmp = a.date.localeCompare(b.date);
+        }
+        return ordreTriDesc ? -cmp : cmp;
+      });
+
+      const totalFiltre = filtrees.reduce(function (acc, item) {
+        return acc + item.montant;
+      }, 0);
+
+      document.getElementById('histo-nb-resultats').textContent =
+        filtrees.length + (filtrees.length > 1 ? ' dépenses' : ' dépense');
+      document.getElementById('histo-total-filtre').textContent = formaterCHF(totalFiltre);
+
+      const corps = document.getElementById('histo-corps');
+      const vide = document.getElementById('histo-vide');
+      corps.innerHTML = '';
+
+      if (filtrees.length === 0) {
+        vide.style.display = 'block';
+        return;
+      }
+      vide.style.display = 'none';
+
+      filtrees.forEach(function (d) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + echapper(d.date) + '</td>' +
+          '<td>' + echapper(d.categorie) + '</td>' +
+          '<td>' + echapper(d.note || '') + '</td>' +
+          '<td class="num montant">' + formaterCHF(d.montant) + '</td>' +
+          '<td class="col-actions actions">' +
+          '<button type="button" class="btn-modif" onclick="modifier(\'' + d.id + '\')">✎</button>' +
+          '<button type="button" class="btn-suppr" onclick="supprimer(\'' + d.id + '\')">✕</button>' +
+          '</td>';
+        corps.appendChild(tr);
+      });
+    }
+
+    // ---------- Affichage principal ----------
+    function afficher() {
+      document.getElementById('mois-titre').textContent = nomDuMois(moisAffiche);
+
+      const duMois = depenses.filter(function (d) {
+        return d.date.slice(0, 7) === moisAffiche;
+      });
+
+      document.getElementById('compteur-mois').textContent = duMois.length;
+
+      const somme = duMois.reduce(function (t, d) { return t + d.montant; }, 0);
+      document.getElementById('total').textContent = formaterCHF(somme);
+
+      const parCategorie = {};
+      duMois.forEach(function (d) {
+        parCategorie[d.categorie] = (parCategorie[d.categorie] || 0) + d.montant;
+      });
+
+      const conteneurCat = document.getElementById('categories');
+      conteneurCat.innerHTML = '';
+
+      const noms = Object.keys(parCategorie).sort(function (a, b) {
+        return parCategorie[b] - parCategorie[a];
+      });
+
+      if (noms.length === 0) {
+        conteneurCat.innerHTML = '<p class="vide">Aucune dépense ce mois-ci.</p>';
+      }
+
+      noms.forEach(function (nom) {
+        const part = somme > 0 ? (parCategorie[nom] / somme) * 100 : 0;
+        const bloc = document.createElement('div');
+        bloc.className = 'cat-ligne';
+        bloc.innerHTML =
+          '<div class="cat-haut">' +
+          '<span>' + echapper(nom) + '</span>' +
+          '<span>' + formaterCHF(parCategorie[nom]) + ' (' + Math.round(part) + ' %)</span>' +
+          '</div>' +
+          '<div class="barre-fond"><div class="barre" style="width:' + part + '%"></div></div>';
+        conteneurCat.appendChild(bloc);
+      });
+
+      if (ecranHistorique.classList.contains('ouvert')) {
+        afficherHistoriquePleinEcran();
+      }
+    }
+
+    // ---------- Formulaire ----------
+    function reinitialiserFormulaire() {
+      idEnModification = null;
+      document.getElementById('montant').value = '';
+      document.getElementById('note').value = '';
+      document.getElementById('date').value = aujourdhui();
+      document.getElementById('titre-form').textContent = 'Nouvelle dépense';
+      document.getElementById('ajouter').textContent = 'Ajouter la dépense';
+      document.getElementById('annuler').style.display = 'none';
+      apercuTicket.style.display = 'none';
+      ocrDetails.style.display = 'none';
+      scanStatut.textContent = 'Prends une photo nette pour tenter d\'extraire le montant et le magasin.';
+    }
+
+    document.getElementById('ajouter').addEventListener('click', function () {
+      const montant = parseFloat(document.getElementById('montant').value);
+      const date = document.getElementById('date').value;
+      const categorie = document.getElementById('categorie').value;
+      const note = document.getElementById('note').value.trim();
+
+      if (isNaN(montant) || montant <= 0) {
+        alert('Entre un montant valide.');
+        return;
+      }
+      if (!date) {
+        alert('Choisis une date.');
+        return;
+      }
+      if (!note) {
+        alert('Entre une note (nom du magasin ou détail).');
+        document.getElementById('note').focus();
+        return;
+      }
+
+      if (idEnModification !== null) {
+        const d = depenses.find(function (x) { return String(x.id) === String(idEnModification); });
+        if (d) {
+          d.montant = montant;
+          d.date = date;
+          d.categorie = categorie;
+          d.note = note;
+        }
+      } else {
+        depenses.push({
+          id: genererId(),
+          montant: montant,
+          date: date,
+          categorie: categorie,
+          note: note
+        });
+      }
+
+      moisAffiche = date.slice(0, 7);
+      sauvegarder();
+      reinitialiserFormulaire();
+      afficher();
+    });
+
+    document.getElementById('annuler').addEventListener('click', reinitialiserFormulaire);
+
+    // ---------- Modifier / Supprimer ----------
+    function modifier(id) {
+      const d = depenses.find(function (x) { return String(x.id) === String(id); });
+      if (!d) return;
+      fermerHistorique();
+      idEnModification = String(id);
+      document.getElementById('montant').value = d.montant;
+      document.getElementById('date').value = d.date;
+      document.getElementById('categorie').value = d.categorie;
+      document.getElementById('note').value = d.note || '';
+      document.getElementById('titre-form').textContent = 'Modifier la dépense';
+      document.getElementById('ajouter').textContent = 'Enregistrer les modifications';
+      document.getElementById('annuler').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function supprimer(id) {
+      if (!confirm('Supprimer cette dépense ?')) return;
+      depenses = depenses.filter(function (d) { return String(d.id) !== String(id); });
+      if (String(idEnModification) === String(id)) reinitialiserFormulaire();
+      sauvegarder();
+      afficher();
+    }
+
+    // ---------- Événements navigation & historique ----------
+    document.getElementById('mois-prec').addEventListener('click', function () { changerMois(-1); });
+    document.getElementById('mois-suiv').addEventListener('click', function () { changerMois(1); });
+    document.getElementById('btn-ouvrir-historique').addEventListener('click', ouvrirHistorique);
+    document.getElementById('btn-fermer-historique').addEventListener('click', fermerHistorique);
+
+    [filtreDate, filtreCategorie, filtreNote, filtreMontantMin].forEach(function (el) {
+      el.addEventListener('input', afficherHistoriquePleinEcran);
+      el.addEventListener('change', afficherHistoriquePleinEcran);
+    });
+
+    document.getElementById('btn-reset-filtres').addEventListener('click', function () {
+      filtreDate.value = '';
+      filtreCategorie.value = '';
+      filtreNote.value = '';
+      filtreMontantMin.value = '';
+      afficherHistoriquePleinEcran();
+    });
+
+    document.querySelectorAll('th.triable').forEach(function (th) {
+      th.addEventListener('click', function () {
+        const col = th.getAttribute('data-tri');
+        if (colonneTri === col) {
+          ordreTriDesc = !ordreTriDesc;
+        } else {
+          colonneTri = col;
+          ordreTriDesc = col === 'montant' || col === 'date';
+        }
+        afficherHistoriquePleinEcran();
+      });
+    });
+
+    // ---------- Démarrage ----------
+    document.getElementById('date').value = aujourdhui();
+    afficher();
+  </script>
+</body>
+</html>
